@@ -1,18 +1,30 @@
-import { Button, StyleSheet, Text, View } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Animated, StyleSheet, View } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef } from 'react';
 
 export default function ResultScreen() {
+  const { text } = useLocalSearchParams<{ text: string }>();
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   return (
     <>
       <Stack.Screen options={{ title: 'Result' }} />
       <View style={styles.container}>
-        <Text>Result Screen</Text>
-        <Button title="Back to Camera" onPress={() => router.replace('/camera')} />
+        <Animated.Text style={[styles.text, { opacity }]}>{text}</Animated.Text>
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  text: { fontSize: 24, textAlign: 'center' },
 });
