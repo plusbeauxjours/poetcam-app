@@ -4,8 +4,7 @@ import * as Camera from 'expo-camera';
 import * as Google from 'expo-auth-session/providers/google';
 import { useEffect } from 'react';
 import { FontAwesome } from '@expo/vector-icons';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { supabase } from '@/supabase';
 
 export default function LoginScreen() {
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -18,8 +17,8 @@ export default function LoginScreen() {
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
+      supabase.auth
+        .signInWithIdToken({ provider: 'google', token: id_token })
         .then(async () => {
           const { status } = await Camera.requestCameraPermissionsAsync();
           if (status === 'granted') {
