@@ -1,0 +1,31 @@
+name: Expo EAS Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  eas-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Install EAS CLI
+        run: yarn global add eas-cli
+
+      - name: Run EAS Update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+        run: |
+          eas update --branch main --message "🚀 Auto update from main push"
