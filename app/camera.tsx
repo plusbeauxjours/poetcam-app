@@ -47,38 +47,43 @@ export default function CameraScreen() {
   const startH = useSharedValue(0);
   const currentAction = useSharedValue<GestureAction>("none");
 
-  const clamp = (value: number, lower: number, upper: number) =>
-    Math.min(Math.max(value, lower), upper);
+  const clamp = (value: number, lower: number, upper: number) => {
+    "worklet";
+    return Math.min(Math.max(value, lower), upper);
+  };
 
   const panGesture = Gesture.Pan()
     .onStart((e) => {
+      "worklet";
       const halfHandle = HANDLE_AREA_SIZE / 2;
-      const x = e.x;
-      const y = e.y;
 
-      const onTopEdge = y >= rectY.value - halfHandle && y <= rectY.value + halfHandle;
+      const onTopEdge = e.y >= rectY.value - halfHandle && e.y <= rectY.value + halfHandle;
       const onBottomEdge =
-        y >= rectY.value + rectHeight.value - halfHandle &&
-        y <= rectY.value + rectHeight.value + halfHandle;
-      const onLeftEdge = x >= rectX.value - halfHandle && x <= rectX.value + halfHandle;
+        e.y >= rectY.value + rectHeight.value - halfHandle &&
+        e.y <= rectY.value + rectHeight.value + halfHandle;
+      const onLeftEdge = e.x >= rectX.value - halfHandle && e.x <= rectX.value + halfHandle;
       const onRightEdge =
-        x >= rectX.value + rectWidth.value - halfHandle &&
-        x <= rectX.value + rectWidth.value + halfHandle;
-      const inVerticalRange = y >= rectY.value && y <= rectY.value + rectHeight.value;
-      const inHorizontalRange = x >= rectX.value && x <= rectX.value + rectWidth.value;
+        e.x >= rectX.value + rectWidth.value - halfHandle &&
+        e.x <= rectX.value + rectWidth.value + halfHandle;
+
+      const inVerticalRange =
+        e.y >= rectY.value + halfHandle && e.y <= rectY.value + rectHeight.value - halfHandle;
+      const inHorizontalRange =
+        e.x >= rectX.value + halfHandle && e.x <= rectX.value + rectWidth.value - halfHandle;
 
       let action: GestureAction = "none";
-      if (inHorizontalRange && inVerticalRange) action = "move";
       if (onTopEdge && onLeftEdge) action = "resize-tl";
       else if (onTopEdge && onRightEdge) action = "resize-tr";
       else if (onBottomEdge && onLeftEdge) action = "resize-bl";
       else if (onBottomEdge && onRightEdge) action = "resize-br";
-      else if (onTopEdge && inHorizontalRange) action = "resize-t";
-      else if (onBottomEdge && inHorizontalRange) action = "resize-b";
-      else if (onLeftEdge && inVerticalRange) action = "resize-l";
-      else if (onRightEdge && inVerticalRange) action = "resize-r";
+      else if (onTopEdge) action = "resize-t";
+      else if (onBottomEdge) action = "resize-b";
+      else if (onLeftEdge) action = "resize-l";
+      else if (onRightEdge) action = "resize-r";
+      else if (inHorizontalRange && inVerticalRange) action = "move";
 
       currentAction.value = action;
+
       if (action !== "none") {
         startX.value = rectX.value;
         startY.value = rectY.value;
@@ -87,49 +92,51 @@ export default function CameraScreen() {
       }
     })
     .onUpdate((e) => {
-      if (currentAction.value === "none") return;
-
+      "worklet";
       const { translationX, translationY } = e;
+      const action = currentAction.value;
 
-      if (currentAction.value === "move") {
+      if (action === "none") {
+        return;
+      }
+
+      if (action === "move") {
         rectX.value = clamp(startX.value + translationX, 0, screenWidth - rectWidth.value);
         rectY.value = clamp(startY.value + translationY, 0, screenHeight - rectHeight.value);
       }
 
-      // Resize from top
-      if (currentAction.value.includes("t")) {
+      // Handle resize
+      if (action.includes("t")) {
         const newY = startY.value + translationY;
         const newHeight = startH.value - translationY;
-        if (newHeight >= MIN_SIZE && newY >= 0) {
-          rectY.value = newY;
+        if (newHeight >= MIN_SIZE) {
+          rectY.value = clamp(newY, 0, startY.value + startH.value - MIN_SIZE);
           rectHeight.value = newHeight;
         }
       }
-      // Resize from bottom
-      if (currentAction.value.includes("b")) {
+      if (action.includes("b")) {
         const newHeight = startH.value + translationY;
-        if (newHeight >= MIN_SIZE && rectY.value + newHeight <= screenHeight) {
-          rectHeight.value = newHeight;
+        if (newHeight >= MIN_SIZE) {
+          rectHeight.value = clamp(newHeight, MIN_SIZE, screenHeight - startY.value);
         }
       }
-      // Resize from left
-      if (currentAction.value.includes("l")) {
+      if (action.includes("l")) {
         const newX = startX.value + translationX;
         const newWidth = startW.value - translationX;
-        if (newWidth >= MIN_SIZE && newX >= 0) {
-          rectX.value = newX;
+        if (newWidth >= MIN_SIZE) {
+          rectX.value = clamp(newX, 0, startX.value + startW.value - MIN_SIZE);
           rectWidth.value = newWidth;
         }
       }
-      // Resize from right
-      if (currentAction.value.includes("r")) {
+      if (action.includes("r")) {
         const newWidth = startW.value + translationX;
-        if (newWidth >= MIN_SIZE && rectX.value + newWidth <= screenWidth) {
-          rectWidth.value = newWidth;
+        if (newWidth >= MIN_SIZE) {
+          rectWidth.value = clamp(newWidth, MIN_SIZE, screenWidth - startX.value);
         }
       }
     })
     .onEnd(() => {
+      "worklet";
       currentAction.value = "none";
     });
 
@@ -177,17 +184,6 @@ export default function CameraScreen() {
     right: 0,
     height: rectHeight.value,
     backgroundColor: "rgba(0,0,0,0.5)",
-  }));
-
-  // These styles are now for visual indicators only
-  const handleStyle = useAnimatedStyle(() => ({
-    position: "absolute",
-    left: rectX.value - 4,
-    top: rectY.value - 4,
-    width: rectWidth.value + 8,
-    height: rectHeight.value + 8,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
   }));
 
   const capture = async () => {
@@ -284,7 +280,6 @@ export default function CameraScreen() {
           <Animated.View style={overlayLeft} pointerEvents="none" />
           <Animated.View style={overlayRight} pointerEvents="none" />
           <Animated.View style={rectStyle} pointerEvents="none" />
-          <Animated.View style={handleStyle} pointerEvents="none" />
         </Animated.View>
       </GestureDetector>
       <TouchableOpacity style={styles.capture} onPress={capture} disabled={loading}>
