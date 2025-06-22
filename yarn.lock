@@ -4434,7 +4434,7 @@ expo-modules-core@2.4.0:
   dependencies:
     invariant "^2.2.4"
 
-expo-router@~5.1.0:
+expo-router@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-5.1.0.tgz#e62899d4907d7b4c71259db2e0e1ef18170d6931"
   integrity sha512-mnKpw35W6kKPpZm+ZxQei6HGUx2JO3znzqJZInzqrTZMgfAcHGgvP9AQFjg/Qi/Qy1CxunB9aQnqE9JPbSwbpw==
