@@ -1,7 +1,7 @@
+import { useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { Camera, useCameraPermissions } from "expo-camera";
+import { Link } from "expo-router";
 import { Button, Platform, StyleSheet } from "react-native";
 
 import { HelloWave } from "@/components/HelloWave";
@@ -23,16 +23,16 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome🤗🤗🤗🤗!</ThemedText>
+        <ThemedText type="title">Welcome🤗🤗!</ThemedText>
         <HelloWave />
       </ThemedView>
-      {cameraPermission && cameraPermission.status !== 'granted' && (
+      {cameraPermission && cameraPermission.status !== "granted" && (
         <Button
           title="카메라 권한 없음: 카메라 권한 요청하러가기"
           onPress={requestCameraPermission}
         />
       )}
-      {mediaPermission && mediaPermission.status !== 'granted' && (
+      {mediaPermission && mediaPermission.status !== "granted" && (
         <Button
           title="앨범 권한이 없음: 앨범 권한 요청하러 가기"
           onPress={requestMediaPermission}
