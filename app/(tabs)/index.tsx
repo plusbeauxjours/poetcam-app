@@ -1,6 +1,8 @@
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import { Platform, StyleSheet } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Camera, useCameraPermissions } from "expo-camera";
+import { Button, Platform, StyleSheet } from "react-native";
 
 import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -8,6 +10,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 
 export default function HomeScreen() {
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [mediaPermission, requestMediaPermission] = ImagePicker.useMediaLibraryPermissions();
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -21,6 +26,18 @@ export default function HomeScreen() {
         <ThemedText type="title">Welcome🤗🤗🤗🤗!</ThemedText>
         <HelloWave />
       </ThemedView>
+      {cameraPermission && cameraPermission.status !== 'granted' && (
+        <Button
+          title="카메라 권한 없음: 카메라 권한 요청하러가기"
+          onPress={requestCameraPermission}
+        />
+      )}
+      {mediaPermission && mediaPermission.status !== 'granted' && (
+        <Button
+          title="앨범 권한이 없음: 앨범 권한 요청하러 가기"
+          onPress={requestMediaPermission}
+        />
+      )}
       <Link href="/camera" style={styles.link}>
         <ThemedText type="link">Open Camera</ThemedText>
       </Link>

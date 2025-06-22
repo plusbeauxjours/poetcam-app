@@ -1,13 +1,21 @@
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function SplashScreen() {
+  const [, requestCameraPermission] = useCameraPermissions();
+  const [, requestMediaPermission] = ImagePicker.useMediaLibraryPermissions();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace('/login');
-    }, 1500);
-    return () => clearTimeout(timer);
+    (async () => {
+      await requestCameraPermission();
+      await requestMediaPermission();
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 500);
+    })();
   }, []);
 
   return (
