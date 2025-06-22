@@ -23,18 +23,8 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
-      - name: 🐛 Debug EAS CLI version (after setup)
-        run: |
-          eas --version
-          which eas
-
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
-
-      - name: 🐛 Debug EAS CLI version (after yarn install)
-        run: |
-          eas --version
-          which eas
 
       - name: 📝 Log Build Message
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
