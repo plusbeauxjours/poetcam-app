@@ -18,7 +18,7 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome🤗!</ThemedText>
+        <ThemedText type="title">Welcome🤗🤗🤗🤗!</ThemedText>
         <HelloWave />
       </ThemedView>
       <Link href="/camera" style={styles.link}>
