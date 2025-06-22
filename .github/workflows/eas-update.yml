@@ -1,3 +1,10 @@
+name: 🚀 EAS Production Build
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,7 +26,7 @@ jobs:
       - name: 🔐 Authenticate with Expo (via EXPO_TOKEN)
         run: eas whoami
 
-      - name: 🚀 Log Build Message
+      - name: 📝 Log Build Message
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
 
       - name: 📦 Trigger EAS Build
