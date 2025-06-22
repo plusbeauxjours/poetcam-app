@@ -4,8 +4,10 @@ import { router } from 'expo-router';
 
 export default function SplashScreen() {
   useEffect(() => {
+    // Bypass login for now. Navigate directly to the camera screen.
+    // TODO: change back to '/login' once authentication is implemented.
     const timer = setTimeout(() => {
-      router.replace('/login');
+      router.replace('/camera');
     }, 1500);
     return () => clearTimeout(timer);
   }, []);

@@ -21,7 +21,8 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack initialRouteName="splash">
         <Stack.Screen name="splash" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
+        {/* Login screen will be added once authentication is ready */}
+        {/* <Stack.Screen name="login" options={{ headerShown: false }} /> */}
         <Stack.Screen name="camera" options={{ headerShown: false }} />
         <Stack.Screen name="result" />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
