@@ -6,6 +6,7 @@ import { Stack, router } from "expo-router";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Button,
   Dimensions,
   StyleSheet,
@@ -102,61 +103,42 @@ export default function CameraScreen() {
       const { translationX, translationY } = e;
       const action = currentAction.value;
 
-      if (action === "none") {
+      if (action === "none") return;
+
+      if (action === "move") {
+        const newX = startX.value + translationX;
+        const newY = startY.value + translationY;
+        rectX.value = withSpring(clamp(newX, 0, screenWidth - rectWidth.value), springConfig);
+        rectY.value = withSpring(clamp(newY, 0, screenHeight - rectHeight.value), springConfig);
         return;
       }
 
-      if (action === "move") {
-        rectX.value = withSpring(
-          clamp(startX.value + translationX, 0, screenWidth - rectWidth.value),
-          springConfig
-        );
-        rectY.value = withSpring(
-          clamp(startY.value + translationY, 0, screenHeight - rectHeight.value),
+      // Resize vertically
+      if (action.includes("t")) {
+        const newY = startY.value + translationY;
+        const clampedY = clamp(newY, 0, startY.value + startH.value - MIN_SIZE);
+        rectY.value = withSpring(clampedY, springConfig);
+        rectHeight.value = withSpring(startH.value + (startY.value - clampedY), springConfig);
+      } else if (action.includes("b")) {
+        const newHeight = startH.value + translationY;
+        rectHeight.value = withSpring(
+          clamp(newHeight, MIN_SIZE, screenHeight - startY.value),
           springConfig
         );
       }
 
-      // Handle resize
-      if (action.includes("t")) {
-        const newY = startY.value + translationY;
-        const newHeight = startH.value - translationY;
-        if (newHeight >= MIN_SIZE) {
-          rectY.value = withSpring(
-            clamp(newY, 0, startY.value + startH.value - MIN_SIZE),
-            springConfig
-          );
-          rectHeight.value = withSpring(newHeight, springConfig);
-        }
-      }
-      if (action.includes("b")) {
-        const newHeight = startH.value + translationY;
-        if (newHeight >= MIN_SIZE) {
-          rectHeight.value = withSpring(
-            clamp(newHeight, MIN_SIZE, screenHeight - startY.value),
-            springConfig
-          );
-        }
-      }
+      // Resize horizontally
       if (action.includes("l")) {
         const newX = startX.value + translationX;
-        const newWidth = startW.value - translationX;
-        if (newWidth >= MIN_SIZE) {
-          rectX.value = withSpring(
-            clamp(newX, 0, startX.value + startW.value - MIN_SIZE),
-            springConfig
-          );
-          rectWidth.value = withSpring(newWidth, springConfig);
-        }
-      }
-      if (action.includes("r")) {
+        const clampedX = clamp(newX, 0, startX.value + startW.value - MIN_SIZE);
+        rectX.value = withSpring(clampedX, springConfig);
+        rectWidth.value = withSpring(startW.value + (startX.value - clampedX), springConfig);
+      } else if (action.includes("r")) {
         const newWidth = startW.value + translationX;
-        if (newWidth >= MIN_SIZE) {
-          rectWidth.value = withSpring(
-            clamp(newWidth, MIN_SIZE, screenWidth - startX.value),
-            springConfig
-          );
-        }
+        rectWidth.value = withSpring(
+          clamp(newWidth, MIN_SIZE, screenWidth - startX.value),
+          springConfig
+        );
       }
     })
     .onEnd(() => {
@@ -245,8 +227,17 @@ export default function CameraScreen() {
   };
 
   const openAlbum = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission required", "You need to allow access to your photos to continue.");
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({ base64: true });
-    if (result.canceled) return;
+    if (result.canceled || !result.assets || result.assets.length === 0) {
+      return;
+    }
+
     const asset = result.assets[0];
     setLoading(true);
     try {
@@ -274,6 +265,7 @@ export default function CameraScreen() {
       router.push({ pathname: "/result", params: { text: data?.text ?? "No result" } });
     } catch (e) {
       console.warn("Upload error:", e);
+      Alert.alert("Error", "There was an error processing the image.");
     } finally {
       setLoading(false);
     }
