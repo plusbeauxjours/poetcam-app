@@ -20,17 +20,17 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🚀 Install EAS CLI
-        run: npm install -g eas-cli@latest
-
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: 🚀 Install EAS CLI (local)
+        run: npm install eas-cli@latest
+
       - name: 🔐 Authenticate with Expo (via EXPO_TOKEN)
-        run: eas whoami
+        run: npx eas whoami
 
       - name: 📝 Log Build Message
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
 
       - name: 📦 Trigger EAS Build
-        run: eas build --platform all --profile production --non-interactive --auto-submit
+        run: npx eas build --platform all --profile production --non-interactive --auto-submit
