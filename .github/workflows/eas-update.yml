@@ -21,7 +21,7 @@ jobs:
           node-version: 20
 
       - name: 🚀 Install EAS CLI
-        run: npm install -g eas-cli
+        run: npm install -g eas-cli@latest
 
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
