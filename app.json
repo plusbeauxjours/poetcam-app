@@ -59,6 +59,7 @@
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "owner": "plusbeauxjours"
   }
 }
