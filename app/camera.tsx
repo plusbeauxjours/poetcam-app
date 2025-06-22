@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
 type GestureAction =
   | "move"
@@ -46,6 +46,12 @@ export default function CameraScreen() {
   const startW = useSharedValue(0);
   const startH = useSharedValue(0);
   const currentAction = useSharedValue<GestureAction>("none");
+
+  const springConfig = {
+    damping: 15,
+    stiffness: 200,
+    mass: 1,
+  };
 
   const clamp = (value: number, lower: number, upper: number) => {
     "worklet";
@@ -101,8 +107,14 @@ export default function CameraScreen() {
       }
 
       if (action === "move") {
-        rectX.value = clamp(startX.value + translationX, 0, screenWidth - rectWidth.value);
-        rectY.value = clamp(startY.value + translationY, 0, screenHeight - rectHeight.value);
+        rectX.value = withSpring(
+          clamp(startX.value + translationX, 0, screenWidth - rectWidth.value),
+          springConfig
+        );
+        rectY.value = withSpring(
+          clamp(startY.value + translationY, 0, screenHeight - rectHeight.value),
+          springConfig
+        );
       }
 
       // Handle resize
@@ -110,28 +122,40 @@ export default function CameraScreen() {
         const newY = startY.value + translationY;
         const newHeight = startH.value - translationY;
         if (newHeight >= MIN_SIZE) {
-          rectY.value = clamp(newY, 0, startY.value + startH.value - MIN_SIZE);
-          rectHeight.value = newHeight;
+          rectY.value = withSpring(
+            clamp(newY, 0, startY.value + startH.value - MIN_SIZE),
+            springConfig
+          );
+          rectHeight.value = withSpring(newHeight, springConfig);
         }
       }
       if (action.includes("b")) {
         const newHeight = startH.value + translationY;
         if (newHeight >= MIN_SIZE) {
-          rectHeight.value = clamp(newHeight, MIN_SIZE, screenHeight - startY.value);
+          rectHeight.value = withSpring(
+            clamp(newHeight, MIN_SIZE, screenHeight - startY.value),
+            springConfig
+          );
         }
       }
       if (action.includes("l")) {
         const newX = startX.value + translationX;
         const newWidth = startW.value - translationX;
         if (newWidth >= MIN_SIZE) {
-          rectX.value = clamp(newX, 0, startX.value + startW.value - MIN_SIZE);
-          rectWidth.value = newWidth;
+          rectX.value = withSpring(
+            clamp(newX, 0, startX.value + startW.value - MIN_SIZE),
+            springConfig
+          );
+          rectWidth.value = withSpring(newWidth, springConfig);
         }
       }
       if (action.includes("r")) {
         const newWidth = startW.value + translationX;
         if (newWidth >= MIN_SIZE) {
-          rectWidth.value = clamp(newWidth, MIN_SIZE, screenWidth - startX.value);
+          rectWidth.value = withSpring(
+            clamp(newWidth, MIN_SIZE, screenWidth - startX.value),
+            springConfig
+          );
         }
       }
     })
