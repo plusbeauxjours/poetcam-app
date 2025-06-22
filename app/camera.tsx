@@ -25,6 +25,7 @@ export default function CameraScreen() {
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const MIN_SIZE = screenWidth * 0.3;
+  const HANDLE_SIZE = 30;
 
   const rectX = useSharedValue((screenWidth - MIN_SIZE) / 2);
   const rectY = useSharedValue((screenHeight - MIN_SIZE) / 2);
@@ -39,7 +40,8 @@ export default function CameraScreen() {
   const clamp = (value: number, lower: number, upper: number) =>
     Math.min(Math.max(value, lower), upper);
 
-  const panGesture = Gesture.Pan()
+  // Move the entire rectangle
+  const moveGesture = Gesture.Pan()
     .onStart(() => {
       startX.value = rectX.value;
       startY.value = rectY.value;
@@ -57,32 +59,35 @@ export default function CameraScreen() {
       );
     });
 
-  const pinchGesture = Gesture.Pinch()
+  // Resize from the top edge
+  const resizeTopGesture = Gesture.Pan()
     .onStart(() => {
-      startX.value = rectX.value;
       startY.value = rectY.value;
-      startW.value = rectWidth.value;
       startH.value = rectHeight.value;
     })
     .onUpdate((e) => {
-      let newWidth = startW.value * e.scale;
-      let newHeight = startH.value * e.scale;
-      newWidth = clamp(newWidth, MIN_SIZE, screenWidth);
-      newHeight = clamp(newHeight, MIN_SIZE, screenHeight);
-
-      const dx = (newWidth - startW.value) / 2;
-      const dy = (newHeight - startH.value) / 2;
-
-      let newX = clamp(startX.value - dx, 0, screenWidth - newWidth);
-      let newY = clamp(startY.value - dy, 0, screenHeight - newHeight);
-
-      rectWidth.value = newWidth;
-      rectHeight.value = newHeight;
-      rectX.value = newX;
+      let newY = startY.value + e.translationY;
+      newY = clamp(newY, 0, startY.value + startH.value - MIN_SIZE);
+      let newHeight = startH.value + (startY.value - newY);
+      newHeight = clamp(newHeight, MIN_SIZE, screenHeight - newY);
       rectY.value = newY;
+      rectHeight.value = newHeight;
     });
 
-  const gesture = Gesture.Simultaneous(panGesture, pinchGesture);
+  // Resize from the left edge
+  const resizeLeftGesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = rectX.value;
+      startW.value = rectWidth.value;
+    })
+    .onUpdate((e) => {
+      let newX = startX.value + e.translationX;
+      newX = clamp(newX, 0, startX.value + startW.value - MIN_SIZE);
+      let newWidth = startW.value + (startX.value - newX);
+      newWidth = clamp(newWidth, MIN_SIZE, screenWidth - newX);
+      rectX.value = newX;
+      rectWidth.value = newWidth;
+    });
 
   const rectStyle = useAnimatedStyle(() => ({
     position: "absolute",
@@ -128,6 +133,22 @@ export default function CameraScreen() {
     right: 0,
     height: rectHeight.value,
     backgroundColor: "rgba(0,0,0,0.5)",
+  }));
+
+  const topHandleStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: rectX.value,
+    top: rectY.value - HANDLE_SIZE / 2,
+    width: rectWidth.value,
+    height: HANDLE_SIZE,
+  }));
+
+  const leftHandleStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    left: rectX.value - HANDLE_SIZE / 2,
+    top: rectY.value,
+    width: HANDLE_SIZE,
+    height: rectHeight.value,
   }));
 
   const capture = async () => {
@@ -225,15 +246,21 @@ export default function CameraScreen() {
       <TouchableOpacity style={styles.album} onPress={openAlbum} disabled={loading}>
         <Ionicons name="images" size={32} color="white" />
       </TouchableOpacity>
-      <GestureDetector gesture={gesture}>
-        <Animated.View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          <Animated.View style={overlayTop} pointerEvents="none" />
-          <Animated.View style={overlayBottom} pointerEvents="none" />
-          <Animated.View style={overlayLeft} pointerEvents="none" />
-          <Animated.View style={overlayRight} pointerEvents="none" />
-          <Animated.View style={rectStyle} pointerEvents="none" />
-        </Animated.View>
-      </GestureDetector>
+      <Animated.View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={overlayTop} pointerEvents="none" />
+        <Animated.View style={overlayBottom} pointerEvents="none" />
+        <Animated.View style={overlayLeft} pointerEvents="none" />
+        <Animated.View style={overlayRight} pointerEvents="none" />
+        <GestureDetector gesture={moveGesture}>
+          <Animated.View style={rectStyle} />
+        </GestureDetector>
+        <GestureDetector gesture={resizeTopGesture}>
+          <Animated.View style={topHandleStyle} />
+        </GestureDetector>
+        <GestureDetector gesture={resizeLeftGesture}>
+          <Animated.View style={leftHandleStyle} />
+        </GestureDetector>
+      </Animated.View>
       <TouchableOpacity style={styles.capture} onPress={capture} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" size="large" />
