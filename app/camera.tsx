@@ -13,10 +13,19 @@ import {
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+
+type GestureAction =
+  | "move"
+  | "resize-tl"
+  | "resize-t"
+  | "resize-tr"
+  | "resize-l"
+  | "resize-r"
+  | "resize-bl"
+  | "resize-b"
+  | "resize-br"
+  | "none";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -25,7 +34,7 @@ export default function CameraScreen() {
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   const MIN_SIZE = screenWidth * 0.3;
-  const HANDLE_SIZE = 30;
+  const HANDLE_AREA_SIZE = 40;
 
   const rectX = useSharedValue((screenWidth - MIN_SIZE) / 2);
   const rectY = useSharedValue((screenHeight - MIN_SIZE) / 2);
@@ -36,57 +45,92 @@ export default function CameraScreen() {
   const startY = useSharedValue(0);
   const startW = useSharedValue(0);
   const startH = useSharedValue(0);
+  const currentAction = useSharedValue<GestureAction>("none");
 
   const clamp = (value: number, lower: number, upper: number) =>
     Math.min(Math.max(value, lower), upper);
 
-  // Move the entire rectangle
-  const moveGesture = Gesture.Pan()
-    .onStart(() => {
-      startX.value = rectX.value;
-      startY.value = rectY.value;
-    })
-    .onUpdate((e) => {
-      rectX.value = clamp(
-        startX.value + e.translationX,
-        0,
-        screenWidth - rectWidth.value
-      );
-      rectY.value = clamp(
-        startY.value + e.translationY,
-        0,
-        screenHeight - rectHeight.value
-      );
-    });
+  const panGesture = Gesture.Pan()
+    .onStart((e) => {
+      const halfHandle = HANDLE_AREA_SIZE / 2;
+      const x = e.x;
+      const y = e.y;
 
-  // Resize from the top edge
-  const resizeTopGesture = Gesture.Pan()
-    .onStart(() => {
-      startY.value = rectY.value;
-      startH.value = rectHeight.value;
-    })
-    .onUpdate((e) => {
-      let newY = startY.value + e.translationY;
-      newY = clamp(newY, 0, startY.value + startH.value - MIN_SIZE);
-      let newHeight = startH.value + (startY.value - newY);
-      newHeight = clamp(newHeight, MIN_SIZE, screenHeight - newY);
-      rectY.value = newY;
-      rectHeight.value = newHeight;
-    });
+      const onTopEdge = y >= rectY.value - halfHandle && y <= rectY.value + halfHandle;
+      const onBottomEdge =
+        y >= rectY.value + rectHeight.value - halfHandle &&
+        y <= rectY.value + rectHeight.value + halfHandle;
+      const onLeftEdge = x >= rectX.value - halfHandle && x <= rectX.value + halfHandle;
+      const onRightEdge =
+        x >= rectX.value + rectWidth.value - halfHandle &&
+        x <= rectX.value + rectWidth.value + halfHandle;
+      const inVerticalRange = y >= rectY.value && y <= rectY.value + rectHeight.value;
+      const inHorizontalRange = x >= rectX.value && x <= rectX.value + rectWidth.value;
 
-  // Resize from the left edge
-  const resizeLeftGesture = Gesture.Pan()
-    .onStart(() => {
-      startX.value = rectX.value;
-      startW.value = rectWidth.value;
+      let action: GestureAction = "none";
+      if (inHorizontalRange && inVerticalRange) action = "move";
+      if (onTopEdge && onLeftEdge) action = "resize-tl";
+      else if (onTopEdge && onRightEdge) action = "resize-tr";
+      else if (onBottomEdge && onLeftEdge) action = "resize-bl";
+      else if (onBottomEdge && onRightEdge) action = "resize-br";
+      else if (onTopEdge && inHorizontalRange) action = "resize-t";
+      else if (onBottomEdge && inHorizontalRange) action = "resize-b";
+      else if (onLeftEdge && inVerticalRange) action = "resize-l";
+      else if (onRightEdge && inVerticalRange) action = "resize-r";
+
+      currentAction.value = action;
+      if (action !== "none") {
+        startX.value = rectX.value;
+        startY.value = rectY.value;
+        startW.value = rectWidth.value;
+        startH.value = rectHeight.value;
+      }
     })
     .onUpdate((e) => {
-      let newX = startX.value + e.translationX;
-      newX = clamp(newX, 0, startX.value + startW.value - MIN_SIZE);
-      let newWidth = startW.value + (startX.value - newX);
-      newWidth = clamp(newWidth, MIN_SIZE, screenWidth - newX);
-      rectX.value = newX;
-      rectWidth.value = newWidth;
+      if (currentAction.value === "none") return;
+
+      const { translationX, translationY } = e;
+
+      if (currentAction.value === "move") {
+        rectX.value = clamp(startX.value + translationX, 0, screenWidth - rectWidth.value);
+        rectY.value = clamp(startY.value + translationY, 0, screenHeight - rectHeight.value);
+      }
+
+      // Resize from top
+      if (currentAction.value.includes("t")) {
+        const newY = startY.value + translationY;
+        const newHeight = startH.value - translationY;
+        if (newHeight >= MIN_SIZE && newY >= 0) {
+          rectY.value = newY;
+          rectHeight.value = newHeight;
+        }
+      }
+      // Resize from bottom
+      if (currentAction.value.includes("b")) {
+        const newHeight = startH.value + translationY;
+        if (newHeight >= MIN_SIZE && rectY.value + newHeight <= screenHeight) {
+          rectHeight.value = newHeight;
+        }
+      }
+      // Resize from left
+      if (currentAction.value.includes("l")) {
+        const newX = startX.value + translationX;
+        const newWidth = startW.value - translationX;
+        if (newWidth >= MIN_SIZE && newX >= 0) {
+          rectX.value = newX;
+          rectWidth.value = newWidth;
+        }
+      }
+      // Resize from right
+      if (currentAction.value.includes("r")) {
+        const newWidth = startW.value + translationX;
+        if (newWidth >= MIN_SIZE && rectX.value + newWidth <= screenWidth) {
+          rectWidth.value = newWidth;
+        }
+      }
+    })
+    .onEnd(() => {
+      currentAction.value = "none";
     });
 
   const rectStyle = useAnimatedStyle(() => ({
@@ -135,20 +179,15 @@ export default function CameraScreen() {
     backgroundColor: "rgba(0,0,0,0.5)",
   }));
 
-  const topHandleStyle = useAnimatedStyle(() => ({
+  // These styles are now for visual indicators only
+  const handleStyle = useAnimatedStyle(() => ({
     position: "absolute",
-    left: rectX.value,
-    top: rectY.value - HANDLE_SIZE / 2,
-    width: rectWidth.value,
-    height: HANDLE_SIZE,
-  }));
-
-  const leftHandleStyle = useAnimatedStyle(() => ({
-    position: "absolute",
-    left: rectX.value - HANDLE_SIZE / 2,
-    top: rectY.value,
-    width: HANDLE_SIZE,
-    height: rectHeight.value,
+    left: rectX.value - 4,
+    top: rectY.value - 4,
+    width: rectWidth.value + 8,
+    height: rectHeight.value + 8,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   }));
 
   const capture = async () => {
@@ -165,15 +204,11 @@ export default function CameraScreen() {
         height: rectHeight.value * ratioY,
       };
 
-      const cropped = await ImageManipulator.manipulateAsync(
-        photo.uri,
-        [{ crop }],
-        {
-          compress: 1,
-          format: ImageManipulator.SaveFormat.JPEG,
-          base64: true,
-        }
-      );
+      const cropped = await ImageManipulator.manipulateAsync(photo.uri, [{ crop }], {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      });
 
       const response = await fetch("https://example.com/api", {
         method: "POST",
@@ -204,15 +239,11 @@ export default function CameraScreen() {
         height: rectHeight.value * ratioY,
       };
 
-      const cropped = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ crop }],
-        {
-          compress: 1,
-          format: ImageManipulator.SaveFormat.JPEG,
-          base64: true,
-        }
-      );
+      const cropped = await ImageManipulator.manipulateAsync(asset.uri, [{ crop }], {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      });
 
       const response = await fetch("https://example.com/api", {
         method: "POST",
@@ -246,21 +277,16 @@ export default function CameraScreen() {
       <TouchableOpacity style={styles.album} onPress={openAlbum} disabled={loading}>
         <Ionicons name="images" size={32} color="white" />
       </TouchableOpacity>
-      <Animated.View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <Animated.View style={overlayTop} pointerEvents="none" />
-        <Animated.View style={overlayBottom} pointerEvents="none" />
-        <Animated.View style={overlayLeft} pointerEvents="none" />
-        <Animated.View style={overlayRight} pointerEvents="none" />
-        <GestureDetector gesture={moveGesture}>
-          <Animated.View style={rectStyle} />
-        </GestureDetector>
-        <GestureDetector gesture={resizeTopGesture}>
-          <Animated.View style={topHandleStyle} />
-        </GestureDetector>
-        <GestureDetector gesture={resizeLeftGesture}>
-          <Animated.View style={leftHandleStyle} />
-        </GestureDetector>
-      </Animated.View>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={StyleSheet.absoluteFill}>
+          <Animated.View style={overlayTop} pointerEvents="none" />
+          <Animated.View style={overlayBottom} pointerEvents="none" />
+          <Animated.View style={overlayLeft} pointerEvents="none" />
+          <Animated.View style={overlayRight} pointerEvents="none" />
+          <Animated.View style={rectStyle} pointerEvents="none" />
+          <Animated.View style={handleStyle} pointerEvents="none" />
+        </Animated.View>
+      </GestureDetector>
       <TouchableOpacity style={styles.capture} onPress={capture} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" size="large" />

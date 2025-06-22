@@ -38,9 +38,5 @@
   },
   "submit": {
     "production": {}
-  },
-  "updates": {
-    "url": "https://u.expo.dev/8e0d5a75-1177-416d-8374-e9106f39e9c0",
-    "fallbackToCacheTimeout": 0
   }
 }
