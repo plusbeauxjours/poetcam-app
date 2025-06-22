@@ -36,6 +36,14 @@ jobs:
           eas --version
           which eas
 
+      - name: 🔄 Ensure latest EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 🐛 Debug EAS CLI version (after reinstall)
+        run: |
+          eas --version
+          which eas
+
       - name: 📝 Log Build Message
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
 
