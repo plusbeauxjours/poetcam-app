@@ -38,7 +38,7 @@ jobs:
         if: github.ref_name == 'dev'
         run: |
           eas update \
-            --branch dev \
+            --channel dev \
             --message "🔄 OTA update from dev (${GITHUB_SHA::8})" \
             --platform all \
             --non-interactive
