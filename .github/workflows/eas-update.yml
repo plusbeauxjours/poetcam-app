@@ -1,4 +1,4 @@
-name: Expo EAS Update
+name: Build with EAS
 
 on:
   push:
@@ -6,26 +6,26 @@ on:
       - main
 
 jobs:
-  eas-update:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: yarn install
+      - name: 🚀 Install EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Install EAS CLI
-        run: yarn global add eas-cli
+      - name: 🔐 Authenticate with Expo
+        run: eas whoami || eas login --access-token ${{ secrets.EXPO_ACCESS_TOKEN }}
 
-      - name: Run EAS Update
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
-        run: |
-          eas update --branch main --message "🚀 Auto update from main push"
+      - name: 🚀 Log Build Message
+        run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
+
+      - name: 📦 Trigger EAS Build
+        run: eas build --platform all --profile production --non-interactive --auto-submit
