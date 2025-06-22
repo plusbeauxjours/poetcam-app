@@ -1,9 +1,10 @@
-name: 🚀 EAS Production Build
+name: 🚀 Expo CI/CD
 
 on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   build:
@@ -33,8 +34,24 @@ jobs:
       - name: 🔐 Authenticate with Expo
         run: eas whoami
 
+      - name: 🚧 Dev Branch OTA Update
+        if: github.ref_name == 'dev'
+        run: |
+          eas update \
+            --branch dev \
+            --message "🔄 OTA update from dev (${GITHUB_SHA::8})" \
+            --platform all \
+            --non-interactive
+
       - name: 📝 Log Build Message
+        if: github.ref_name == 'main'
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
 
-      - name: 📦 Trigger EAS Build
-        run: eas build --platform all --profile production --non-interactive --auto-submit
+      - name: 📦 Trigger Production Build & Submit
+        if: github.ref_name == 'main'
+        run: |
+          eas build \
+            --platform all \
+            --profile production \
+            --non-interactive \
+            --auto-submit
