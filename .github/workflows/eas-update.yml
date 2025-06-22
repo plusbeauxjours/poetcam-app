@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
@@ -17,14 +20,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🪏 Settup EXPO & EAS
+      - name: 🪏 Setup Expo + EAS
         uses: expo/expo-github-action@v8
         with:
+          expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_ACCESS_TOKEN }}
 
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
+
+      - name: 🔐 Authenticate with Expo
+        run: eas whoami
 
       - name: 📝 Log Build Message
         run: echo "🚀 EAS Build triggered from main branch - camera 기능 업데이트 포함"
