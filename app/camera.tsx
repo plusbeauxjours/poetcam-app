@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { Stack, router } from "expo-router";
 import { useRef, useState } from "react";
 import {
@@ -167,6 +168,45 @@ export default function CameraScreen() {
     }
   };
 
+  const openAlbum = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ base64: true });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    setLoading(true);
+    try {
+      const ratioX = asset.width / screenWidth;
+      const ratioY = asset.height / screenHeight;
+      const crop = {
+        originX: rectX.value * ratioX,
+        originY: rectY.value * ratioY,
+        width: rectWidth.value * ratioX,
+        height: rectHeight.value * ratioY,
+      };
+
+      const cropped = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ crop }],
+        {
+          compress: 1,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        }
+      );
+
+      const response = await fetch("https://example.com/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: cropped.base64 }),
+      });
+      const data = await response.json();
+      router.push({ pathname: "/result", params: { text: data?.text ?? "No result" } });
+    } catch (e) {
+      console.warn("Upload error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!permission || permission.status !== "granted") {
     return (
       <View style={styles.container}>
@@ -179,6 +219,12 @@ export default function CameraScreen() {
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: "Camera" }} />
       <CameraView style={{ flex: 1 }} facing="back" ref={cameraRef} />
+      <TouchableOpacity style={styles.close} onPress={() => router.back()}>
+        <Ionicons name="close" size={32} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.album} onPress={openAlbum} disabled={loading}>
+        <Ionicons name="images" size={32} color="white" />
+      </TouchableOpacity>
       <GestureDetector gesture={gesture}>
         <Animated.View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <Animated.View style={overlayTop} pointerEvents="none" />
@@ -213,6 +259,26 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: "red",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  close: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  album: {
+    position: "absolute",
+    bottom: 40,
+    left: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
   },
