@@ -1,11 +1,20 @@
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View, Share, Button } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 export default function ResultScreen() {
   const { text, imageUri } = useLocalSearchParams<{ text: string; imageUri?: string }>();
   const opacity = useRef(new Animated.Value(0)).current;
+
+  const onShare = useCallback(async () => {
+    if (!imageUri) return;
+    try {
+      await Share.share({ url: imageUri });
+    } catch (e) {
+      console.warn('Share error:', e);
+    }
+  }, [imageUri]);
 
   useEffect(() => {
     Animated.timing(opacity, {
@@ -17,7 +26,13 @@ export default function ResultScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Result' }} />
+      <Stack.Screen
+        options={{
+          title: 'Result',
+          headerRight: () =>
+            imageUri ? <Button title="Share" onPress={onShare} /> : null,
+        }}
+      />
       <View style={styles.container}>
         {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
         <Animated.Text style={[styles.text, { opacity }]}>{text}</Animated.Text>
