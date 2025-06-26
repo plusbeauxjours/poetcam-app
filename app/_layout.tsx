@@ -14,7 +14,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -24,9 +23,7 @@ export default function RootLayout() {
         <Stack initialRouteName="splash">
           <Stack.Screen name="splash" options={{ headerShown: false }} />
           <Stack.Screen name="camera" options={{ headerShown: false }} />
-          <Stack.Screen name="result" />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
+          <Stack.Screen name="result" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

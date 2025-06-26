@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
+import { useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 export default function SplashScreen() {
   const [, requestCameraPermission] = useCameraPermissions();
@@ -13,19 +13,14 @@ export default function SplashScreen() {
       await requestCameraPermission();
       await requestMediaPermission();
       setTimeout(() => {
-        router.replace('/(tabs)');
+        router.replace("/result");
       }, 500);
     })();
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Image source={require('@/assets/images/splash-icon.png')} style={styles.logo} />
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  logo: { width: 200, height: 200, resizeMode: 'contain' },
-});
