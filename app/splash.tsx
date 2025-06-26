@@ -13,7 +13,7 @@ export default function SplashScreen() {
       await requestCameraPermission();
       await requestMediaPermission();
       setTimeout(() => {
-        router.replace("/result");
+        router.replace("/camera");
       }, 500);
     })();
   }, []);
