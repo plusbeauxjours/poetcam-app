@@ -22,7 +22,10 @@ export default function CameraScreen() {
         body: JSON.stringify({ image: photo.base64 }),
       });
       const data = await response.json();
-      router.push({ pathname: "/result", params: { text: data?.text ?? "No result" } });
+      router.push({
+        pathname: "/result",
+        params: { text: data?.text ?? "No result", uri: photo.uri },
+      });
     } catch (e) {
       console.warn("Upload error:", e);
       Alert.alert("Error", "There was an error processing the image.");
@@ -57,7 +60,10 @@ export default function CameraScreen() {
         body: JSON.stringify({ image: asset.base64 }),
       });
       const data = await response.json();
-      router.push({ pathname: "/result", params: { text: data?.text ?? "No result" } });
+      router.push({
+        pathname: "/result",
+        params: { text: data?.text ?? "No result", uri: asset.uri },
+      });
     } catch (e) {
       console.warn("Upload error:", e);
       Alert.alert("Error", "There was an error processing the image.");
