@@ -18,7 +18,7 @@ export default function CameraScreen() {
       </View>
     );
   }
-
+  console.log("permission", permission);
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="back" />
