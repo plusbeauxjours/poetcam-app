@@ -1,31 +1,35 @@
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Button, StyleSheet, Text, View } from "react-native";
 
-export default function Index() {
-  const router = useRouter();
+export default function CameraScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
 
-  useEffect(() => {
-    // 조건에 따라 특정 페이지로
-    const timer = setTimeout(() => {
-      router.replace("/camera"); // 또는 /login 등
-    }, 100); // 빠르게 이동
+  if (!permission) {
+    // Camera permissions are still loading.
+    return <View />;
+  }
 
-    return () => clearTimeout(timer);
-  }, []);
-
+  if (!permission.granted) {
+    // Camera permissions are not granted yet.
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
+  console.log("permission", permission);
   return (
     <View style={styles.container}>
-      <Text>Hello</Text>
+      <CameraView style={styles.camera} facing="back" />
     </View>
-  ); // 아무것도 렌더링하지 않음
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "red",
   },
   camera: {
     flex: 1,
