@@ -21,13 +21,16 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="back" />
-      <TouchableOpacity
-        style={styles.button}
-        activeOpacity={1}
-        onPress={() => {
-          console.log("take photo");
-        }}
-      />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={1}
+          onPress={() => {
+            console.log("take photo");
+          }}>
+          <View style={styles.innerButton}>Take Photo</View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -40,15 +43,47 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  button: {
+  buttonContainer: {
     position: "absolute",
-    width: 100,
-    height: 100,
-    backgroundColor: Colors.grey[500],
-    borderRadius: 100,
-    bottom: 100,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 320,
+    height: 110,
+    bottom: 60,
     left: "50%",
     right: "50%",
-    transform: [{ translateX: -50 }],
+    transform: [{ translateX: -160 }],
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 100,
+    shadowColor: Colors.grey[800],
+    shadowOffset: { width: 0.5, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  button: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 100,
+    width: 90,
+    height: 90,
+    backgroundColor: Colors.grey[600],
+    borderRadius: 100,
+    shadowColor: Colors.grey[800],
+    shadowOffset: { width: 0.5, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  innerButton: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.grey[400],
+    borderRadius: 100,
+    opacity: 0.8,
   },
 });
