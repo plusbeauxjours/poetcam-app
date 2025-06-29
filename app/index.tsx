@@ -1,51 +1,66 @@
 import { Colors } from "@/constants/Colors";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import { Images, Settings } from "lucide-react-native";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRef } from "react";
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
     return <View />;
   }
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
-      </View>
-    );
-  }
+  const openAlbum = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      router.push({ pathname: "/result", params: { imageUri: result.assets[0].uri } });
+    }
+  };
+
+  const takePhoto = async () => {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync();
+      if (photo) {
+        router.push({ pathname: "/result", params: { imageUri: photo.uri } });
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing="back" />
+      <CameraView style={styles.camera} facing="back" ref={cameraRef} />
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={{ ...styles.sideButton, marginLeft: 10 }}
           activeOpacity={1}
-          onPress={() => {
-            console.log("take photo");
-          }}>
-          <Images color={Colors.grey[300]} size={20} />;
+          onPress={openAlbum}>
+          <Images color={Colors.grey[300]} size={20} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={1}
-          onPress={() => {
-            console.log("take photo");
-          }}>
-          <View style={styles.innerButton}>Take Photo</View>
+        <TouchableOpacity style={styles.button} activeOpacity={1} onPress={takePhoto}>
+          <View style={styles.innerButton} />
         </TouchableOpacity>
         <TouchableOpacity
           style={{ ...styles.sideButton, marginRight: 10 }}
           activeOpacity={1}
           onPress={() => {
-            console.log("take photo");
+            console.log("Settings button pressed");
           }}>
-          <Settings color={Colors.grey[300]} />;
+          <Settings color={Colors.grey[300]} />
         </TouchableOpacity>
       </View>
     </View>
