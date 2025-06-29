@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { Images, Settings } from "lucide-react-native";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
@@ -23,12 +24,28 @@ export default function CameraScreen() {
       <CameraView style={styles.camera} facing="back" />
       <View style={styles.buttonContainer}>
         <TouchableOpacity
+          style={{ ...styles.sideButton, marginLeft: 10 }}
+          activeOpacity={1}
+          onPress={() => {
+            console.log("take photo");
+          }}>
+          <Images color={Colors.grey[300]} size={20} />;
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.button}
           activeOpacity={1}
           onPress={() => {
             console.log("take photo");
           }}>
           <View style={styles.innerButton}>Take Photo</View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ ...styles.sideButton, marginRight: 10 }}
+          activeOpacity={1}
+          onPress={() => {
+            console.log("take photo");
+          }}>
+          <Settings color={Colors.grey[300]} />;
         </TouchableOpacity>
       </View>
     </View>
@@ -46,8 +63,9 @@ const styles = StyleSheet.create({
   buttonContainer: {
     position: "absolute",
     display: "flex",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-around",
     width: 320,
     height: 110,
     bottom: 60,
@@ -56,9 +74,9 @@ const styles = StyleSheet.create({
     transform: [{ translateX: -160 }],
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 100,
-    shadowColor: Colors.grey[800],
+    shadowColor: Colors.grey[900],
     shadowOffset: { width: 0.5, height: 2 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.8,
     shadowRadius: 10,
     elevation: 5,
   },
@@ -71,11 +89,21 @@ const styles = StyleSheet.create({
     height: 90,
     backgroundColor: Colors.grey[600],
     borderRadius: 100,
-    shadowColor: Colors.grey[800],
-    shadowOffset: { width: 0.5, height: 2 },
+    shadowColor: Colors.grey[900],
+    shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 10,
     elevation: 5,
+  },
+  sideButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 100,
+    width: 60,
+    height: 60,
+    backgroundColor: Colors.grey[600],
+    borderRadius: 100,
   },
   innerButton: {
     width: 80,
