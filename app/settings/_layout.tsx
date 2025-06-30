@@ -32,7 +32,7 @@ export default function SettingsLayout() {
         <Stack.Screen name="about" options={{ title: "About" }} />
         <Stack.Screen name="donation" options={{ title: "Support us" }} />
         <Stack.Screen name="agent" options={{ title: "AI Agent" }} />
-        <Stack.Screen name="log" options={{ title: "Logs" }} />
+        <Stack.Screen name="history" options={{ title: "History" }} />
       </Stack>
     </ThemedView>
   );

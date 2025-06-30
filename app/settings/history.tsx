@@ -2,10 +2,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { StyleSheet } from "react-native";
 
-export default function LogScreen() {
+export default function HistoryScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Logs</ThemedText>
+      <ThemedText type="title">History</ThemedText>
     </ThemedView>
   );
 }
