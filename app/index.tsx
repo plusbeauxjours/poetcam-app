@@ -6,6 +6,8 @@ import { Images, Settings } from "lucide-react-native";
 import { useRef } from "react";
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
+// TODO(minjaelee): 1:1의 비율로 (카메라와 앨범 모두)
+
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -57,9 +59,7 @@ export default function CameraScreen() {
         <TouchableOpacity
           style={{ ...styles.sideButton, marginRight: 10 }}
           activeOpacity={1}
-          onPress={() => {
-            console.log("Settings button pressed");
-          }}>
+          onPress={() => router.push("/settings")}>
           <Settings color={Colors.grey[300]} />
         </TouchableOpacity>
       </View>

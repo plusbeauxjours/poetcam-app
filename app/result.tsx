@@ -4,6 +4,11 @@ import { ChevronLeft } from "lucide-react-native";
 import { Image, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// TODO(minjaelee): 1:1의 비율 + 시 streaming
+// TODO(minjaelee): 공유하기 버튼 추가
+// TODO(minjaelee): 에이전트의 얼굴 보이기
+// TODO(minjaelee): 유료이거나 무료이지만 3번이내의 공유 일때만 이미지 공유
+
 export default function ResultScreen() {
   const params = useLocalSearchParams<{ imageUri: string }>();
   const router = useRouter();
