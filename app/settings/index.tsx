@@ -21,7 +21,7 @@ const settingsItems = [
   { id: "about", name: "About", href: "/settings/about", icon: "information-circle-outline" },
   { id: "donation", name: "Support us", href: "/settings/donation", icon: "heart-outline" },
   { id: "agent", name: "AI Agent", href: "/settings/agent", icon: "options-outline" },
-  { id: "log", name: "Logs", href: "/settings/log", icon: "bug-outline" },
+  { id: "history", name: "History", href: "/settings/history", icon: "bug-outline" },
 ];
 
 export default function SettingsScreen() {

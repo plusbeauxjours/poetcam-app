@@ -13,22 +13,51 @@
 //     </GestureHandlerRootView>
 //   );
 // }
-import { Slot } from "expo-router";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated";
 
-SplashScreen.preventAutoHideAsync(); // 자동으로 사라지지 않게
+import { useColorScheme } from "@/hooks/useColorScheme";
 
-export default function Layout() {
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient();
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
   useEffect(() => {
-    const prepare = async () => {
-      // 초기화 작업들
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await SplashScreen.hideAsync(); // 완료 후 스플래시 숨김
-    };
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
 
-    prepare();
-  }, []);
+  if (!loaded) {
+    return null;
+  }
 
-  return <Slot />; // 각 페이지로 라우팅
+  return (
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="splash" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="camera" options={{ presentation: "modal", headerShown: false }} />
+            <Stack.Screen name="result" options={{ presentation: "modal" }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
+  );
 }
