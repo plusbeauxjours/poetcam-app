@@ -1,18 +1,3 @@
-// import { Stack } from "expo-router";
-// import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-// export default function RootLayout() {
-//   return (
-//     <GestureHandlerRootView style={{ flex: 1 }}>
-//       <Stack>
-//         <Stack.Screen name="splash" options={{ headerShown: false }} />
-//         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-//         <Stack.Screen name="camera" options={{ presentation: "modal", headerShown: false }} />
-//         <Stack.Screen name="result" options={{ presentation: "modal" }} />
-//       </Stack>
-//     </GestureHandlerRootView>
-//   );
-// }
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
@@ -24,7 +9,6 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
