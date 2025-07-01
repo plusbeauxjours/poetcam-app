@@ -4,6 +4,8 @@ import { sendPushNotification, useNotifications } from "@/hooks/useNotifications
 import { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
 
+// TODO(minjaelee): 히스토리의 시를 만든 장소에 다시 가면 알림을 받기
+
 export default function NotificationScreen() {
   const { expoPushToken } = useNotifications();
   const [isSending, setIsSending] = useState(false);
