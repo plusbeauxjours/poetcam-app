@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { sendPushNotification, useNotifications } from "@/hooks/useNotifications";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
 
@@ -8,6 +9,7 @@ import { Button, StyleSheet, View } from "react-native";
 
 export default function NotificationScreen() {
   const { expoPushToken } = useNotifications();
+  const { location } = useCurrentLocation();
   const [isSending, setIsSending] = useState(false);
 
   const handleSendNotification = async () => {
@@ -37,6 +39,11 @@ export default function NotificationScreen() {
       <ThemedText style={styles.tokenText} selectable>
         Token: {expoPushToken || "Requesting token..."}
       </ThemedText>
+      {location && (
+        <ThemedText style={styles.tokenText}>
+          Lat: {location.coords.latitude.toFixed(5)}, Lng: {location.coords.longitude.toFixed(5)}
+        </ThemedText>
+      )}
       <View style={styles.buttonContainer}>
         <Button
           title={isSending ? "Sending..." : "Send Test Notification"}
