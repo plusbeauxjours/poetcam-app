@@ -1,31 +1,39 @@
-import { useEffect } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
+import { router } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-export default function SplashScreen() {
-  const [, requestCameraPermission] = useCameraPermissions();
-  const [, requestMediaPermission] = ImagePicker.useMediaLibraryPermissions();
-
+export default function CustomSplashScreen() {
   useEffect(() => {
-    (async () => {
-      await requestCameraPermission();
-      await requestMediaPermission();
-      setTimeout(() => {
-        router.replace('/camera');
-      }, 500);
-    })();
+    async function prepareAndNavigate() {
+      // Keep the native splash screen visible until we are ready to navigate
+      await SplashScreen.preventAutoHideAsync();
+
+      // Perform any setup here, e.g., loading fonts, data, etc.
+      // We'll just wait 1 second as requested.
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Hide the native splash screen
+      await SplashScreen.hideAsync();
+
+      // Navigate to the new tab layout
+      router.replace("/camera");
+    }
+
+    prepareAndNavigate();
   }, []);
 
   return (
     <View style={styles.container}>
-      <Image source={require('@/assets/images/splash-icon.png')} style={styles.logo} />
+      <ActivityIndicator size="large" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  logo: { width: 200, height: 200, resizeMode: 'contain' },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

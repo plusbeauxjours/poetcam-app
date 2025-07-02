@@ -1,33 +1,80 @@
-import { Animated, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { Colors } from "@/constants/Colors";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
+import { Image, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// TODO(minjaelee): 1:1의 비율 + 시 streaming
+// TODO(minjaelee): 공유하기 버튼 추가
+// TODO(minjaelee): 에이전트의 얼굴 보이기
+// TODO(minjaelee): 유료이거나 무료이지만 3번이내의 공유 일때만 이미지 공유
 
 export default function ResultScreen() {
-  const { text, uri } = useLocalSearchParams<{ text?: string; uri: string }>();
-  const opacity = useRef(new Animated.Value(0)).current;
+  const params = useLocalSearchParams<{ imageUri: string }>();
+  const router = useRouter();
 
-  useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+  if (!params.imageUri) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.errorText}>Image not found. Please try again.</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.buttonText}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Result' }} />
-      <View style={styles.container}>
-        <Image source={{ uri }} style={styles.image} />
-        {text && <Animated.Text style={[styles.text, { opacity }]}>{text}</Animated.Text>}
-      </View>
-    </>
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.header}>
+        <ChevronLeft color={Colors.grey[900]} size={30} />
+        <Text style={styles.headerText}>Back</Text>
+      </TouchableOpacity>
+      <Image source={{ uri: params.imageUri }} style={styles.image} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  image: { width: 200, height: 200, marginBottom: 16, borderRadius: 8 },
-  text: { fontSize: 24, textAlign: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  image: {
+    flex: 1,
+    width: "100%",
+    resizeMode: "contain",
+  },
+  header: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    zIndex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 20,
+  },
+  headerText: {
+    color: Colors.grey[900],
+    fontSize: 16,
+    marginLeft: 5,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 18,
+    textAlign: "center",
+    marginTop: "50%",
+  },
+  backButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: Colors.grey[200],
+    borderRadius: 5,
+    alignSelf: "center",
+  },
+  buttonText: {
+    color: Colors.grey[900],
+  },
 });
