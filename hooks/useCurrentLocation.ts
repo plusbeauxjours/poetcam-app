@@ -16,8 +16,9 @@ export function useCurrentLocation() {
 
       subscriber = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,
-          distanceInterval: 1,
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: 25,
+          timeInterval: 10000,
         },
         (loc) => setLocation(loc)
       );
