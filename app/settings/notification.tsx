@@ -1,7 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { sendPushNotification, useNotifications } from "@/hooks/useNotifications";
-import { useCurrentLocation } from "@/hooks/useCurrentLocation";
+import { useLocationStore } from "@/store/useLocationStore";
+import { usePoetReminder } from "@/hooks/usePoetReminder";
 import { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
 
@@ -9,8 +10,11 @@ import { Button, StyleSheet, View } from "react-native";
 
 export default function NotificationScreen() {
   const { expoPushToken } = useNotifications();
-  const { location } = useCurrentLocation();
+  const location = useLocationStore((s) => s.location);
   const [isSending, setIsSending] = useState(false);
+
+  // Start location tracking and proximity notifications
+  usePoetReminder();
 
   const handleSendNotification = async () => {
     if (!expoPushToken) {
