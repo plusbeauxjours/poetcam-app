@@ -33,6 +33,12 @@ export function usePoetReminder() {
   const { history } = usePoetHistoryStore();
   const setLocation = useLocationStore((s) => s.setLocation);
   const notifiedRef = useRef<Set<string>>(new Set());
+  // keep latest history without re-subscribing to location updates
+  const historyRef = useRef(history);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
 
   useEffect(() => {
     let subscriber: Location.LocationSubscription | null = null;
@@ -49,7 +55,7 @@ export function usePoetReminder() {
         },
         (loc) => {
           setLocation(loc);
-          history.forEach((poet) => {
+          historyRef.current.forEach((poet) => {
             if (notifiedRef.current.has(poet.id)) return;
             const d = getDistanceFromLatLonInMeters(
               loc.coords.latitude,
@@ -77,5 +83,5 @@ export function usePoetReminder() {
         subscriber.remove();
       }
     };
-  }, [history, setLocation]);
+  }, [setLocation]);
 }
