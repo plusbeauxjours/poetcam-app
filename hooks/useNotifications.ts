@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -22,7 +22,14 @@ async function registerForPushNotificationsAsync() {
       finalStatus = status;
     }
     if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
+      Alert.alert(
+        "Permission Denied",
+        "Notification permission is required",
+        [
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+          { text: "OK" },
+        ]
+      );
       return;
     }
     token = (

@@ -1,5 +1,6 @@
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
+import { Alert, Linking } from "react-native";
 
 export function useCurrentLocation() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
@@ -11,6 +12,14 @@ export function useCurrentLocation() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
+        Alert.alert(
+          "Permission Denied",
+          "Location permission is required",
+          [
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+            { text: "OK" },
+          ]
+        );
         return;
       }
 
