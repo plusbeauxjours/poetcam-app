@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { Images, Settings } from "lucide-react-native";
 import { useRef } from "react";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, StyleSheet, TouchableOpacity, View, Text } from "react-native";
 
 // TODO(minjaelee): 1:1의 비율로 (카메라와 앨범 모두)
 
@@ -16,10 +16,41 @@ export default function CameraScreen() {
     return <View />;
   }
 
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity
+          onPress={async () => {
+            const result = await requestPermission();
+            if (!result.granted) {
+              Alert.alert(
+                "Permission Required",
+                "Camera access is needed to take photos",
+                [
+                  { text: "Open Settings", onPress: () => Linking.openSettings() },
+                  { text: "Cancel", style: "cancel" },
+                ]
+              );
+            }
+          }}>
+          <View>
+            <Images color={Colors.grey[300]} size={20} />
+          </View>
+          <View>
+            <Text style={{ textAlign: "center", marginTop: 8 }}>Grant Permission</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const openAlbum = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!");
+      Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!", [
+        { text: "Open Settings", onPress: () => Linking.openSettings() },
+        { text: "OK" },
+      ]);
       return;
     }
 

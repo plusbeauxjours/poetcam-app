@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Alert, Button, Linking, StyleSheet, Text, View } from "react-native";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -12,7 +12,22 @@ export default function CameraScreen() {
     return (
       <View style={styles.container}>
         <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Button
+          onPress={async () => {
+            const result = await requestPermission();
+            if (!result.granted) {
+              Alert.alert(
+                "Permission Required",
+                "Camera access is needed to take photos",
+                [
+                  { text: "Open Settings", onPress: () => Linking.openSettings() },
+                  { text: "Cancel", style: "cancel" },
+                ]
+              );
+            }
+          }}
+          title="grant permission"
+        />
       </View>
     );
   }

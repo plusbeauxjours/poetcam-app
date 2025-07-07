@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
+import { Alert, Linking } from "react-native";
 import { useLocationStore } from "@/store/useLocationStore";
 import { usePoetHistoryStore } from "@/store/usePoetHistoryStore";
 
@@ -45,6 +46,14 @@ export function usePoetReminder() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location permission is required for reminders",
+          [
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+            { text: "OK" },
+          ]
+        );
         return;
       }
 
