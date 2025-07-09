@@ -1,25 +1,29 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { sendPushNotification, useNotifications } from "@/hooks/useNotifications";
+import { useLocationStore } from "@/store/useLocationStore";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { Camera, Images, Settings } from "lucide-react-native";
 import { useRef } from "react";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 
 // TODO(minjaelee): 1:1의 비율로 (카메라와 앨범 모두)
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+  const { expoPushToken, permissionState } = useNotifications();
+  const location = useLocationStore((s) => s.location);
 
   // 권한 로딩 중
   if (!permission) {
     return (
       <ThemedView style={styles.permissionContainer}>
         <Camera size={64} color={Colors.grey[400]} />
-        <ThemedText style={styles.permissionTitle}>카메라 준비 중...</ThemedText>
+        <ThemedText style={styles.permissionText}>카메라 권한을 확인 중입니다...</ThemedText>
       </ThemedView>
     );
   }
@@ -31,8 +35,7 @@ export default function CameraScreen() {
         <Camera size={64} color={Colors.grey[400]} />
         <ThemedText style={styles.permissionTitle}>카메라 권한이 필요합니다</ThemedText>
         <ThemedText style={styles.permissionDescription}>
-          사진을 촬영하여 시를 작성하려면{"\n"}
-          카메라 접근 권한을 허용해주세요
+          사진을 찍어 시를 작성하기 위해 카메라 접근 권한이 필요합니다.
         </ThemedText>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
           <ThemedText style={styles.permissionButtonText}>권한 허용하기</ThemedText>
@@ -44,67 +47,101 @@ export default function CameraScreen() {
   const openAlbum = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("갤러리 접근 권한 필요", "사진을 선택하려면 갤러리 접근 권한이 필요합니다.", [
-        { text: "취소", style: "cancel" },
-        { text: "설정으로 이동", onPress: () => {} },
-      ]);
+      Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!");
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-      aspect: [1, 1], // 1:1 비율 권장
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
     });
 
-    if (!result.canceled) {
-      router.push({ pathname: "/result", params: { imageUri: result.assets[0].uri } });
+    if (!result.canceled && result.assets[0]) {
+      router.push({
+        pathname: "/result",
+        params: { imageUri: result.assets[0].uri },
+      });
     }
   };
 
-  const takePhoto = async () => {
+  const takePicture = async () => {
     if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync({
-          quality: 1,
-          base64: false,
-          exif: true,
+          quality: 0.8,
         });
+
         if (photo) {
-          router.push({ pathname: "/result", params: { imageUri: photo.uri } });
+          router.push({
+            pathname: "/result",
+            params: { imageUri: photo.uri },
+          });
         }
       } catch (error) {
-        Alert.alert("촬영 실패", "사진 촬영 중 오류가 발생했습니다. 다시 시도해주세요.");
+        console.error("사진 촬영 실패:", error);
+        Alert.alert("오류", "사진을 촬영하는 중 오류가 발생했습니다.");
       }
+    }
+  };
+
+  const handleSettingsLongPress = async () => {
+    // 알림 테스트 기능
+    if (!permissionState.granted) {
+      Alert.alert("알림 테스트", "알림 권한이 없습니다. 설정에서 알림을 활성화하시겠습니까?", [
+        { text: "취소", style: "cancel" },
+        { text: "설정으로 이동", onPress: () => router.push("/settings/notification") },
+      ]);
+      return;
+    }
+
+    if (!expoPushToken) {
+      Alert.alert("알림 테스트", "푸시 토큰을 가져올 수 없습니다.");
+      return;
+    }
+
+    try {
+      const locationText = location
+        ? `위치: ${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`
+        : "위치 정보 없음";
+
+      await sendPushNotification(
+        expoPushToken,
+        "📸 카메라에서 테스트",
+        `카메라 화면에서 알림 테스트\n${locationText}`,
+        {
+          type: "camera_test",
+          timestamp: new Date().toISOString(),
+        }
+      );
+
+      Alert.alert("✅ 알림 전송됨", "테스트 알림이 전송되었습니다!");
+    } catch (error) {
+      Alert.alert("❌ 알림 실패", "알림 전송에 실패했습니다.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <CameraView
-        style={styles.camera}
-        facing="back"
-        ref={cameraRef}
-        ratio="1:1" // 1:1 비율 설정
-      />
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={{ ...styles.sideButton, marginLeft: 10 }}
-          activeOpacity={0.7}
-          onPress={openAlbum}>
-          <Images color={Colors.grey[300]} size={20} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} activeOpacity={0.7} onPress={takePhoto}>
-          <View style={styles.innerButton} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{ ...styles.sideButton, marginRight: 10 }}
-          activeOpacity={0.7}
-          onPress={() => router.push("/settings")}>
-          <Settings color={Colors.grey[300]} />
-        </TouchableOpacity>
-      </View>
+      <CameraView style={styles.camera} ref={cameraRef}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.galleryButton} onPress={openAlbum}>
+            <Images size={24} color="white" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+
+          <Pressable
+            style={styles.settingsButton}
+            onPress={() => router.push("/(tabs)/settings")}
+            onLongPress={handleSettingsLongPress}
+            delayLongPress={800}>
+            <Settings size={24} color="white" />
+          </Pressable>
+        </View>
+      </CameraView>
     </View>
   );
 }
@@ -207,5 +244,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+  },
+  permissionText: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 24,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  galleryButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.grey[700],
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  captureButton: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: Colors.grey[700],
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  captureButtonInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.grey[600],
+  },
+  settingsButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.grey[700],
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
   },
 });
