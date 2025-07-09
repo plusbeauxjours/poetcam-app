@@ -33,8 +33,12 @@ export default function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    if (loaded && !user) {
-      router.replace("/login");
+    if (loaded) {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        router.replace("/(tabs)");
+      }
     }
   }, [user, loaded]);
 
@@ -50,6 +54,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="camera" options={{ presentation: "modal", headerShown: false }} />
             <Stack.Screen name="result" options={{ presentation: "modal" }} />
+            <Stack.Screen name="settings" options={{ headerShown: true, title: "설정" }} />
             <Stack.Screen name="+not-found" />
           </Stack>
         </ThemeProvider>

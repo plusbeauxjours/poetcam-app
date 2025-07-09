@@ -1,7 +1,6 @@
 import { supabase } from "@/supabase";
 import { AntDesign } from "@expo/vector-icons";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export interface GoogleLoginButtonProps {
@@ -10,17 +9,27 @@ export interface GoogleLoginButtonProps {
 }
 
 export function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
-  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleGoogleLogin() {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
-    setIsLoading(false);
-    if (error) {
-      onError?.(error);
-    } else {
-      onSuccess?.();
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "poetcamapp://auth/callback",
+        },
+      });
+      console.log(data);
+      if (error) {
+        onError?.(error);
+      } else {
+        onSuccess?.();
+      }
+    } catch (error) {
+      onError?.(error as Error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -32,11 +41,11 @@ export function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps
       activeOpacity={0.8}>
       <View style={styles.contentRow}>
         {isLoading ? (
-          <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+          <ActivityIndicator color="#fff" style={styles.icon} />
         ) : (
-          <AntDesign name="google" size={20} color="#fff" style={{ marginRight: 8 }} />
+          <AntDesign name="google" size={20} color="#fff" style={styles.icon} />
         )}
-        <Text style={styles.buttonText}>{t("auth:loginWithGoogle", "구글로 로그인")}</Text>
+        <Text style={styles.buttonText}>{isLoading ? "로그인 중..." : "구글로 로그인"}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -44,14 +53,16 @@ export function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps
 
 const styles = StyleSheet.create({
   button: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4285F4",
-    borderRadius: 8,
-    paddingVertical: 12,
+    backgroundColor: "#4285f4",
     paddingHorizontal: 24,
-    marginVertical: 12,
+    paddingVertical: 16,
+    borderRadius: 12,
+    minWidth: 200,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -59,10 +70,15 @@ const styles = StyleSheet.create({
   contentRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    marginRight: 12,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

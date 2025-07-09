@@ -1,6 +1,30 @@
 import { StyleSheet, Text, type TextProps } from "react-native";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+
+i18n.use(initReactI18next).init({
+  lng: "ko",
+  fallbackLng: "en",
+  resources: {
+    en: {
+      translation: {
+        "구글로 로그인": "Login with Google",
+      },
+    },
+    ko: {
+      translation: {
+        "구글로 로그인": "구글로 로그인",
+      },
+    },
+  },
+  interpolation: {
+    escapeValue: false,
+  },
+});
+
+export default i18n;
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
