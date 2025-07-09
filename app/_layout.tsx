@@ -34,11 +34,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded && !user) {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [user, loaded]);
 
-  if (!user || !loaded) return null;
+  if (!loaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -46,6 +46,7 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="splash" options={{ headerShown: false }} />
+            <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="camera" options={{ presentation: "modal", headerShown: false }} />
             <Stack.Screen name="result" options={{ presentation: "modal" }} />
