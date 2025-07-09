@@ -9,12 +9,17 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePoetReminder } from "@/hooks/usePoetReminder";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "../store/useAuthStore";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const user = useAuthStore((s) => s.user);
+  const router = useRouter();
+
   const colorScheme = useColorScheme();
   usePoetReminder();
   const [loaded] = useFonts({
@@ -27,9 +32,13 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  useEffect(() => {
+    if (loaded && !user) {
+      router.replace("/");
+    }
+  }, [user, loaded]);
+
+  if (!user || !loaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
