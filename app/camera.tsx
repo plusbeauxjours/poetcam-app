@@ -5,6 +5,16 @@ import { Button, StyleSheet, Text, View } from "react-native";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+  const [mediaPermission, setMediaPermission] = useState<MediaLibrary.PermissionResponse | null>(
+    null
+  );
+
+  useEffect(() => {
+    (async () => {
+      const status = await MediaLibrary.requestPermissionsAsync();
+      setMediaPermission(status);
+    })();
+  }, []);
 
   if (mediaPermission && !mediaPermission.granted) {
     return (
