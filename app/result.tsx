@@ -13,7 +13,7 @@ import {
   FeedbackState,
 } from "@/services/errorHandler";
 import { usePoetHistoryStore } from "@/store/usePoetHistoryStore";
-import Clipboard from "@react-native-clipboard/clipboard";
+import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   AlertCircle,
@@ -226,7 +226,7 @@ export default function ResultScreen() {
   const handleCopy = async () => {
     if (generatePoemMutation.data?.poem) {
       try {
-        Clipboard.setString(generatePoemMutation.data.poem);
+        await Clipboard.setStringAsync(generatePoemMutation.data.poem);
         Alert.alert("복사 완료", "시가 클립보드에 복사되었습니다.");
 
         // Haptic feedback

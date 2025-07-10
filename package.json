@@ -14,7 +14,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
     "@expo/vector-icons": "^14.1.0",
-    "@react-native-clipboard/clipboard": "^1.16.3",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "@react-navigation/native-stack": "^7.3.16",
@@ -25,6 +24,7 @@
     "expo-auth-session": "~6.2.0",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.8",
+    "expo-clipboard": "~7.1.5",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
@@ -42,6 +42,7 @@
     "expo-system-ui": "~5.0.9",
     "expo-updates": "^0.28.15",
     "expo-web-browser": "~14.2.0",
+    "getenv": "^2.0.0",
     "global": "^4.4.0",
     "i18next": "^25.3.2",
     "lucide-react-native": "^0.525.0",
