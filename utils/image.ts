@@ -143,21 +143,26 @@ export function calculateOptimalDimensions(
 }
 
 /**
- * Get image dimensions from URI
+ * Get image dimensions from URI using expo-image-manipulator (React Native compatible)
  */
 export async function getImageDimensions(
   imageUri: string
 ): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height });
-    };
-    img.onerror = () => {
       reject(new Error("Failed to load image for dimension calculation"));
-    };
-    img.src = imageUri;
-  });
+  try {
+    // Use expo-image-manipulator to get image info without any manipulation
+    const result = await manipulateAsync(imageUri, [], { compress: 1, format: SaveFormat.JPEG });
+
+    if (!result.width || !result.height) {
+      throw new Error("Unable to determine image dimensions");
+    }
+
+    return { width: result.width, height: result.height };
+  } catch (error) {
+    throw new Error(
+      `Failed to get image dimensions: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
 }
 
 /**
@@ -239,21 +244,22 @@ export async function preprocessImage(
 }
 
 /**
- * Get basic image information
+ * Get basic image information using expo-image-manipulator
  */
 async function getImageInfo(
   imageUri: string
 ): Promise<{ width: number; height: number; size?: number }> {
   try {
-    // For React Native, we can use the manipulateAsync just to get info
+    // Use expo-image-manipulator to get image info without any manipulation
     const result = await manipulateAsync(imageUri, [], { compress: 1, format: SaveFormat.JPEG });
 
-    // Get dimensions through Image component (web compatibility)
-    const dimensions = await getImageDimensions(imageUri);
+    if (!result.width || !result.height) {
+      throw new Error("Unable to determine image dimensions");
+    }
 
     return {
-      width: dimensions.width,
-      height: dimensions.height,
+      width: result.width,
+      height: result.height,
     };
   } catch (error) {
     throw new Error(
@@ -277,23 +283,27 @@ function estimateFileSize(width: number, height: number, quality: number = 0.8):
  */
 export async function fileUriToBase64DataUrl(fileUri: string): Promise<string> {
   try {
-    const response = await fetch(fileUri);
-    const blob = await response.blob();
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
-        } else {
-          reject(new Error("Failed to convert to base64"));
-        }
-      };
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(blob);
+    // Use expo-image-manipulator to get base64 data
+    const result = await manipulateAsync(fileUri, [], {
+      compress: 1,
+      format: SaveFormat.JPEG,
+      base64: true,
     });
+
+    if (!result.base64) {
+      throw new Error("Failed to generate base64 data");
+    }
+
+    const format = detectImageFormat(fileUri);
+    const mediaType = getMediaType(format);
+
+    return `data:${mediaType};base64,${result.base64}`;
   } catch (error) {
-    throw new Error(`Failed to convert file URI to base64: ${error}`);
+    throw new Error(
+      `Failed to convert file URI to base64: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
