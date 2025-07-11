@@ -148,7 +148,6 @@ export function calculateOptimalDimensions(
 export async function getImageDimensions(
   imageUri: string
 ): Promise<{ width: number; height: number }> {
-      reject(new Error("Failed to load image for dimension calculation"));
   try {
     // Use expo-image-manipulator to get image info without any manipulation
     const result = await manipulateAsync(imageUri, [], { compress: 1, format: SaveFormat.JPEG });
