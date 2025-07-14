@@ -17,7 +17,8 @@ class CryptoService {
       // For crypto-js, we can just use a random string as a key.
       // We'll generate secure random bytes and base64 encode them for a strong key.
       const randomBytes = await Crypto.getRandomBytesAsync(32); // 256-bit key
-      key = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(randomBytes))));
+      const wordArray = CryptoJS.lib.WordArray.create(randomBytes as any);
+      key = CryptoJS.enc.Base64.stringify(wordArray);
       await SecureStore.setItemAsync(KEY_TAG, key);
     }
 

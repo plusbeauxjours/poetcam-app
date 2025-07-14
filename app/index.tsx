@@ -3,7 +3,7 @@ import { Redirect } from "expo-router";
 
 export default function Index() {
   const user = useAuthStore((s) => s.user);
-  console.log(user);
+
   if (user) {
     return <Redirect href="/(tabs)" />;
   }
