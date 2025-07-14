@@ -3,6 +3,7 @@
     "name": "poetcam-app",
     "slug": "poetcam-app",
     "version": "1.0.0",
+    "main": "expo-router/entry",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "poetcamapp",
@@ -75,7 +76,7 @@
       "expo-notifications"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
     "extra": {
       "router": {},

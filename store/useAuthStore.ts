@@ -5,22 +5,19 @@ import { supabase } from "../supabase";
 interface AuthState {
   user: User | null;
   session: Session | null;
+  isInitialized: boolean;
+  setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
-  signOut: () => Promise<void>;
+  setInitialized: (initialized: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
-  setSession: (session) =>
-    set({
-      session,
-      user: session?.user ?? null,
-    }),
-  signOut: async () => {
-    await supabase.auth.signOut();
-    set({ session: null, user: null });
-  },
+  isInitialized: false,
+  setUser: (user) => set({ user }),
+  setSession: (session) => set({ session, user: session?.user ?? null }),
+  setInitialized: (initialized) => set({ isInitialized: initialized }),
 }));
 
 // 세션 구독 코드도 포함

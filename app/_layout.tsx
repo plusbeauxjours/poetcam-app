@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -9,17 +9,16 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePoetReminder } from "@/hooks/usePoetReminder";
-import { useRouter } from "expo-router";
 import { useAuthStore } from "../store/useAuthStore";
+import { supabase } from "../supabase";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
-  const user = useAuthStore((s) => s.user);
+  const { session, setSession, isInitialized, setInitialized } = useAuthStore();
   const router = useRouter();
-
   const colorScheme = useColorScheme();
   usePoetReminder();
   const [loaded] = useFonts({
@@ -27,22 +26,51 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    const bootstrap = async () => {
+      // 1. Set up auth listener
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        // Mark as initialized once we have auth state
+        if (!isInitialized) {
+          setInitialized(true);
+        }
+      });
+
+      // 2. Initial session check
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        setInitialized(true);
+      }
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+
+    bootstrap();
+  }, []);
 
   useEffect(() => {
-    if (loaded) {
-      if (!user) {
-        router.replace("/login");
-      } else {
-        router.replace("/(tabs)");
-      }
+    if (loaded && isInitialized) {
+      SplashScreen.hideAsync().then(() => {
+        if (!session) {
+          router.replace("/login");
+        } else {
+          router.replace("/(tabs)");
+        }
+      });
     }
-  }, [user, loaded]);
+  }, [loaded, isInitialized, session, router]);
 
-  if (!loaded) return null;
+  if (!isInitialized || !loaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
