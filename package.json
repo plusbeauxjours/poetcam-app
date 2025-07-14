@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.39.5",
     "@tanstack/react-query": "^5.81.5",
     "base64-arraybuffer": "^1.0.2",
+    "crypto-js": "^4.2.0",
     "expo": "^53.0.12",
     "expo-application": "^6.1.4",
     "expo-auth-session": "~6.2.0",
@@ -38,6 +39,7 @@
     "expo-media-library": "~17.1.7",
     "expo-notifications": "~0.31.3",
     "expo-router": "^5.1.0",
+    "expo-secure-store": "^14.2.3",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.5",
@@ -64,6 +66,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.73.0",
     "eslint": "^9.25.0",

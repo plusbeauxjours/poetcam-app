@@ -175,13 +175,13 @@ class MetadataService {
 
       switch (entityType) {
         case "image":
-          return await this.searchImageMetadata(filters, sort, pagination);
+          return this.searchImageMetadata(filters, sort, pagination) as any;
         case "poem":
-          return await this.searchPoemMetadata(filters, sort, pagination);
+          return this.searchPoemMetadata(filters, sort, pagination) as any;
         case "session":
-          return await this.searchSessionMetadata(filters, sort, pagination);
+          return this.searchSessionMetadata(filters, sort, pagination) as any;
         case "file":
-          return await this.searchFileMetadata(filters, sort, pagination);
+          return this.searchFileMetadata(filters, sort, pagination) as any;
         default:
           return {
             success: false,
