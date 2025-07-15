@@ -1,5 +1,7 @@
+import { onlineManager } from "@tanstack/react-query";
 import { decode } from "base64-arraybuffer";
 import * as FileSystem from "expo-file-system";
+import { queueOfflineAction } from "../services/syncService";
 import { supabase } from "../supabase";
 import type { ImageContentType, StorageListResult, StorageUsage } from "../types/storage";
 
@@ -8,6 +10,7 @@ export interface ImageUploadResult {
   url?: string;
   path?: string;
   error?: string;
+  queued?: boolean;
 }
 
 export interface ImageUploadOptions {
@@ -27,6 +30,24 @@ export async function uploadImage(
   options: ImageUploadOptions
 ): Promise<ImageUploadResult> {
   try {
+    // If we are offline, push the action to the offline queue and exit early
+    if (!onlineManager.isOnline()) {
+      await queueOfflineAction({
+        type: "UPLOAD_IMAGE",
+        payload: {
+          localUri: imageUri,
+          // Casting via unknown to satisfy OfflineAction payload constraints
+          options: options as unknown as Record<string, unknown>,
+        },
+      });
+
+      return {
+        success: false,
+        error: "offline",
+        queued: true,
+      };
+    }
+
     const { userId, quality = 0.8, contentType = "image/jpeg" } = options;
 
     // 고유한 파일명 생성

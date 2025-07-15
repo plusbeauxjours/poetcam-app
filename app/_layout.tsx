@@ -1,5 +1,7 @@
+import { initializeSyncService } from "@/services/syncService";
+import { queryClient } from "@/utils/queryClient";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -14,8 +16,6 @@ import { supabase } from "../supabase";
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
-
 export default function RootLayout() {
   const { session, setSession, isInitialized, setInitialized } = useAuthStore();
   const router = useRouter();
@@ -24,6 +24,11 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+
+  // Start background sync once on mount
+  useEffect(() => {
+    initializeSyncService();
+  }, []);
 
   useEffect(() => {
     const bootstrap = async () => {
