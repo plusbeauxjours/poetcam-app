@@ -1,8 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient, onlineManager } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
 
 // ---------- Network → React-Query Online Manager ----------
 // Attach NetInfo listener so React Query knows when we are online / offline.
@@ -29,15 +26,16 @@ export const queryClient = new QueryClient({
   },
 });
 
+// TODO: Re-enable persistence after fixing import issues
 // ---------- Cache Persistence (Offline Support) ----------
-const asyncStoragePersister = createAsyncStoragePersister({
-  storage: AsyncStorage,
-  key: "react-query-cache",
-  throttleTime: 1000, // throttle writes to AsyncStorage
-});
+// const asyncStoragePersister = createAsyncStoragePersister({
+//   storage: AsyncStorage,
+//   key: "react-query-cache",
+//   throttleTime: 1000, // throttle writes to AsyncStorage
+// });
 
-persistQueryClient({
-  queryClient,
-  persister: asyncStoragePersister,
-  maxAge: 1000 * 60 * 60 * 6, // Persist for 6 hours
-});
+// persistQueryClient({
+//   queryClient,
+//   persister: asyncStoragePersister,
+//   maxAge: 1000 * 60 * 60 * 6, // Persist for 6 hours
+// });
