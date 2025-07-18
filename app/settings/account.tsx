@@ -8,11 +8,13 @@ import {
   softDeleteUserData,
 } from "@/services/dataDeletionService";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function AccountScreen() {
-  const { session } = useAuthStore();
+  const { session, signOut, isLoading } = useAuthStore();
+  const router = useRouter();
   const [showExportModal, setShowExportModal] = useState(false);
   const [hasDeletedData, setHasDeletedData] = useState(false);
   const [deletedStats, setDeletedStats] = useState<{
@@ -113,12 +115,43 @@ export default function AccountScreen() {
     }
   };
 
+  const handleSignOut = () => {
+    Alert.alert("로그아웃", "정말로 로그아웃하시겠습니까?", [
+      { text: "취소", style: "cancel" },
+      { text: "로그아웃", style: "destructive", onPress: confirmSignOut },
+    ]);
+  };
+
+  const confirmSignOut = async () => {
+    try {
+      await signOut();
+      router.replace("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+      Alert.alert("로그아웃 실패", "로그아웃 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText type="title" style={styles.title}>
           계정 관리
         </ThemedText>
+
+        {/* Account Info Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>계정 정보</Text>
+          {session?.user?.email && (
+            <Text style={styles.accountInfo}>이메일: {session.user.email}</Text>
+          )}
+          <Text style={styles.accountInfo}>
+            가입일:{" "}
+            {session?.user?.created_at
+              ? new Date(session.user.created_at).toLocaleDateString()
+              : "알 수 없음"}
+          </Text>
+        </View>
 
         {/* Data Export Section */}
         <View style={styles.section}>
@@ -164,18 +197,20 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* Account Info Section */}
+        {/* Sign Out Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정 정보</Text>
-          {session?.user?.email && (
-            <Text style={styles.accountInfo}>이메일: {session.user.email}</Text>
-          )}
-          <Text style={styles.accountInfo}>
-            가입일:{" "}
-            {session?.user?.created_at
-              ? new Date(session.user.created_at).toLocaleDateString()
-              : "알 수 없음"}
-          </Text>
+          <Text style={styles.sectionTitle}>계정 설정</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.signOutButton]}
+            onPress={handleSignOut}
+            disabled={isLoading}>
+            <Text style={[styles.actionButtonText, styles.signOutButtonText]}>
+              {isLoading ? "로그아웃 중..." : "로그아웃"}
+            </Text>
+            <Text style={[styles.actionButtonSubtext, styles.signOutButtonSubtext]}>
+              계정에서 안전하게 로그아웃
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -247,6 +282,16 @@ const styles = StyleSheet.create({
   },
   restoreButtonSubtext: {
     color: "#2f855a",
+  },
+  signOutButton: {
+    backgroundColor: "#fff8f1",
+    borderColor: "#fed7aa",
+  },
+  signOutButtonText: {
+    color: "#ea580c",
+  },
+  signOutButtonSubtext: {
+    color: "#dc2626",
   },
   deletedDataText: {
     fontSize: 14,

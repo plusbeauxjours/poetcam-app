@@ -13,12 +13,11 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePoetReminder } from "@/hooks/usePoetReminder";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSubscriptionStore } from "../store/useSubscriptionStore";
-import { supabase } from "../supabase";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { session, setSession, isInitialized, setInitialized } = useAuthStore();
+  const { session, isInitialized, isLoading, initializeAuth } = useAuthStore();
   const { initializeRevenueCat } = useSubscriptionStore();
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -32,38 +31,10 @@ export default function RootLayout() {
     initializeSyncService();
   }, []);
 
+  // Initialize auth on app start
   useEffect(() => {
-    const bootstrap = async () => {
-      // 1. Set up auth listener
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        // Mark as initialized once we have auth state
-        if (!isInitialized) {
-          setInitialized(true);
-        }
-      });
-
-      // 2. Initial session check
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setSession(session);
-      } catch (error) {
-        console.error("Error getting session:", error);
-      } finally {
-        setInitialized(true);
-      }
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    };
-
-    bootstrap();
-  }, []);
+    initializeAuth();
+  }, [initializeAuth]);
 
   // Initialize RevenueCat when auth is ready
   useEffect(() => {
@@ -74,8 +45,9 @@ export default function RootLayout() {
     }
   }, [isInitialized, initializeRevenueCat]);
 
+  // Handle navigation when auth state and fonts are ready
   useEffect(() => {
-    if (loaded && isInitialized) {
+    if (loaded && isInitialized && !isLoading) {
       SplashScreen.hideAsync().then(() => {
         if (!session) {
           router.replace("/login");
@@ -84,9 +56,10 @@ export default function RootLayout() {
         }
       });
     }
-  }, [loaded, isInitialized, session, router]);
+  }, [loaded, isInitialized, isLoading, session, router]);
 
-  if (!isInitialized || !loaded) return null;
+  // Show splash screen while loading
+  if (!isInitialized || !loaded || isLoading) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
