@@ -1,5 +1,6 @@
 import { supabase } from "@/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -27,26 +28,52 @@ export function AppleLoginButton({ onSuccess, onError }: AppleLoginButtonProps) 
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
-        options: {
-          redirectTo: "poetcamapp://auth/callback",
-        },
+      // Check if Apple Authentication is available
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error("Apple Sign-In is not available on this device");
+      }
+
+      // Authenticate with Apple
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
       });
 
-      if (error) {
-        onError?.(error);
-      } else {
+      // Use the credential to sign in with Supabase
+      if (credential.identityToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: "apple",
+          token: credential.identityToken,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        // Successfully signed in
         onSuccess?.();
+      } else {
+        throw new Error("No identity token received from Apple");
       }
-    } catch (error) {
-      onError?.(error as Error);
+    } catch (error: any) {
+      console.error("Apple login error:", error);
+
+      // Handle user cancellation gracefully
+      if (error.code === "ERR_REQUEST_CANCELED") {
+        // User canceled the Apple Sign-In flow, don't show error
+        return;
+      }
+
+      onError?.(error);
     } finally {
       setIsLoading(false);
     }
   }
 
-  // Only render on iOS
+  // Only render on iOS and when Apple Authentication is available
   if (Platform.OS !== "ios") {
     return null;
   }

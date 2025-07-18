@@ -1,7 +1,11 @@
 import { supabase } from "@/supabase";
 import { AntDesign } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+// Configure web browser for auth session
+WebBrowser.maybeCompleteAuthSession();
 
 export interface GoogleLoginButtonProps {
   onSuccess?: () => void;
@@ -18,15 +22,46 @@ export function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps
         provider: "google",
         options: {
           redirectTo: "poetcamapp://auth/callback",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
-      console.log(data);
+
       if (error) {
-        onError?.(error);
+        throw error;
+      }
+
+      if (data?.url) {
+        // Open the OAuth URL in a web browser
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          "poetcamapp://auth/callback"
+        );
+
+        if (result.type === "success") {
+          // Wait a moment for the session to be established
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Check if we have a session
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            onSuccess?.();
+          } else {
+            throw new Error("로그인이 완료되지 않았습니다. 다시 시도해주세요.");
+          }
+        } else if (result.type === "cancel") {
+          // User canceled, don't show error
+          return;
+        } else {
+          throw new Error("로그인이 취소되었거나 실패했습니다.");
+        }
       } else {
-        onSuccess?.();
+        throw new Error("구글 로그인 URL을 가져올 수 없습니다.");
       }
     } catch (error) {
+      console.error("Google login error:", error);
       onError?.(error as Error);
     } finally {
       setIsLoading(false);

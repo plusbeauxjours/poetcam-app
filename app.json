@@ -11,7 +11,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.plusbeauxjours.poetcamapp",
+      "bundleIdentifier": "com.poetcam.app",
       "infoPlist": {
         "NSCameraUsageDescription": "사진을 찍어 시를 작성하기 위해 카메라 접근 권한이 필요합니다.",
         "NSPhotoLibraryUsageDescription": "갤러리에서 사진을 선택하여 시를 작성하기 위해 사진 라이브러리 접근 권한이 필요합니다.",
@@ -25,7 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.plusbeauxjours.poetcamapp",
+      "package": "com.poetcam.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",

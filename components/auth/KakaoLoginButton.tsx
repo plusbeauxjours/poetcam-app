@@ -1,6 +1,11 @@
+import { supabase } from "@/supabase";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+// Configure web browser for auth session
+WebBrowser.maybeCompleteAuthSession();
 
 export interface KakaoLoginButtonProps {
   onSuccess?: () => void;
@@ -13,29 +18,68 @@ export function KakaoLoginButton({ onSuccess, onError }: KakaoLoginButtonProps) 
   async function handleKakaoLogin() {
     setIsLoading(true);
     try {
-      // Note: Kakao OAuth requires additional setup in Supabase
-      // This is a placeholder implementation
-      onError?.(new Error("카카오 로그인 기능은 준비 중입니다."));
+      // For now, we'll use Supabase's OAuth flow
+      // Note: This requires Kakao to be configured in Supabase dashboard
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao" as any, // Type assertion since Kakao might not be in types yet
+        options: {
+          redirectTo: "poetcamapp://auth/callback",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
 
-      // Future implementation would look like:
-      // const { data, error } = await supabase.auth.signInWithOAuth({
-      //   provider: "kakao",
-      //   options: {
-      //     redirectTo: "poetcamapp://auth/callback",
-      //   },
-      // });
+      if (error) {
+        // Check if it's a configuration issue
+        if (error.message.includes("Provider not found") || error.message.includes("kakao")) {
+          throw new Error(
+            "카카오 로그인이 아직 설정되지 않았습니다.\n구글 또는 Apple 로그인을 이용해주세요."
+          );
+        }
+        throw error;
+      }
 
-      // if (error) {
-      //   onError?.(error);
-      // } else {
-      //   onSuccess?.();
-      // }
+      if (data?.url) {
+        // Open the OAuth URL in a web browser
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          "poetcamapp://auth/callback"
+        );
+
+        if (result.type === "success") {
+          onSuccess?.();
+        } else if (result.type === "cancel") {
+          // User canceled, don't show error
+          return;
+        } else {
+          throw new Error("로그인이 취소되었거나 실패했습니다.");
+        }
+      } else {
+        throw new Error("카카오 로그인 URL을 가져올 수 없습니다.");
+      }
     } catch (error) {
+      console.error("Kakao login error:", error);
       onError?.(error as Error);
     } finally {
       setIsLoading(false);
     }
   }
+
+  // Alternative implementation using direct OAuth flow
+  const handleDirectKakaoOAuth = async () => {
+    try {
+      // This would require a Kakao app key and proper OAuth setup
+      Alert.alert(
+        "카카오 로그인",
+        "카카오 로그인 기능은 현재 개발 중입니다.\n다른 로그인 방법을 이용해주세요.",
+        [{ text: "확인" }]
+      );
+    } catch (error) {
+      onError?.(error as Error);
+    }
+  };
 
   return (
     <TouchableOpacity
