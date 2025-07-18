@@ -12,12 +12,14 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePoetReminder } from "@/hooks/usePoetReminder";
 import { useAuthStore } from "../store/useAuthStore";
+import { useSubscriptionStore } from "../store/useSubscriptionStore";
 import { supabase } from "../supabase";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { session, setSession, isInitialized, setInitialized } = useAuthStore();
+  const { initializeRevenueCat } = useSubscriptionStore();
   const router = useRouter();
   const colorScheme = useColorScheme();
   usePoetReminder();
@@ -62,6 +64,15 @@ export default function RootLayout() {
 
     bootstrap();
   }, []);
+
+  // Initialize RevenueCat when auth is ready
+  useEffect(() => {
+    if (isInitialized) {
+      initializeRevenueCat().catch((error) => {
+        console.error("Failed to initialize RevenueCat:", error);
+      });
+    }
+  }, [isInitialized, initializeRevenueCat]);
 
   useEffect(() => {
     if (loaded && isInitialized) {

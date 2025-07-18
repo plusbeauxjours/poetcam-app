@@ -1,5 +1,6 @@
 import { Session, User } from "@supabase/supabase-js";
 import { create } from "zustand";
+import RevenueCatService from "../services/revenueCatService";
 import { supabase } from "../supabase";
 
 interface AuthState {
@@ -11,12 +12,28 @@ interface AuthState {
   setInitialized: (initialized: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   isInitialized: false,
   setUser: (user) => set({ user }),
-  setSession: (session) => set({ session, user: session?.user ?? null }),
+  setSession: (session) => {
+    const previousSession = get().session;
+    set({ session, user: session?.user ?? null });
+
+    // Handle RevenueCat user management
+    if (session?.user?.id && session.user.id !== previousSession?.user?.id) {
+      // User logged in or switched accounts
+      RevenueCatService.setUserID(session.user.id).catch((error) => {
+        console.error("Failed to set RevenueCat user ID:", error);
+      });
+    } else if (!session?.user?.id && previousSession?.user?.id) {
+      // User logged out
+      RevenueCatService.logOut().catch((error) => {
+        console.error("Failed to log out from RevenueCat:", error);
+      });
+    }
+  },
   setInitialized: (initialized) => set({ isInitialized: initialized }),
 }));
 
