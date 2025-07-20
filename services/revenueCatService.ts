@@ -1,5 +1,6 @@
 import { REVENUECAT_API_KEY_ANDROID, REVENUECAT_API_KEY_IOS } from "@env";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
@@ -8,9 +9,37 @@ import Purchases, {
   PurchasesPackage,
 } from "react-native-purchases";
 
+const OFFERINGS_CACHE_KEY = "@offerings_cache";
+const OFFERINGS_CACHE_TTL = 3600; // 1 hour
+
 export class RevenueCatService {
   private static instance: RevenueCatService;
   private initialized = false;
+
+  private async loadCachedOfferings(): Promise<PurchasesOffering | null> {
+    try {
+      const raw = await AsyncStorage.getItem(OFFERINGS_CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw) as { timestamp: number; data: PurchasesOffering | null };
+      if (Date.now() - cached.timestamp > OFFERINGS_CACHE_TTL * 1000) {
+        await AsyncStorage.removeItem(OFFERINGS_CACHE_KEY);
+        return null;
+      }
+      return cached.data;
+    } catch (error) {
+      console.warn('Failed to load offerings cache', error);
+      return null;
+    }
+  }
+
+  private async saveCachedOfferings(offerings: PurchasesOffering | null): Promise<void> {
+    try {
+      const data = { timestamp: Date.now(), data: offerings };
+      await AsyncStorage.setItem(OFFERINGS_CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn('Failed to save offerings cache', error);
+    }
+  }
 
   static getInstance(): RevenueCatService {
     if (!RevenueCatService.instance) {
@@ -91,19 +120,36 @@ export class RevenueCatService {
   /**
    * Get available offerings (subscription plans)
    */
-  async getOfferings(): Promise<PurchasesOffering | null> {
+  async getOfferings(forceRefresh = false): Promise<PurchasesOffering | null> {
     try {
       if (!this.initialized) {
         console.warn("RevenueCat not initialized. Call initialize() first.");
         return null;
       }
 
+      if (!forceRefresh) {
+        const cached = await this.loadCachedOfferings();
+        if (cached) return cached;
+      }
+
       const offerings = await Purchases.getOfferings();
-      return offerings.current;
+      const current = offerings.current;
+      await this.saveCachedOfferings(current);
+      return current;
     } catch (error) {
       console.error("Failed to get offerings:", error);
       return null;
     }
+  }
+
+  /**
+   * Get single product information from cached offerings
+   */
+  async getProductInfo(identifier: string): Promise<PurchasesPackage | null> {
+    const offerings = await this.getOfferings();
+    if (!offerings) return null;
+    const pkg = offerings.availablePackages.find((p) => p.identifier === identifier);
+    return pkg || null;
   }
 
   /**
