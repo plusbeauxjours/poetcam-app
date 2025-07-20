@@ -101,12 +101,12 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       if (offerings?.availablePackages) {
         const plans: SubscriptionPlan[] = offerings.availablePackages.map((pkg) => ({
           id: pkg.identifier,
-          title: pkg.identifier, // Use identifier as title for now
-          description: `${pkg.packageType} subscription plan`, // Placeholder description
-          price: "TBD", // Price to be determined from store
+          title: pkg.storeProduct.title || pkg.identifier,
+          description: pkg.storeProduct.description || `${pkg.packageType} plan`,
+          price: pkg.storeProduct.priceString,
           duration: pkg.packageType,
           features: getFeaturesByPackageType(pkg.packageType),
-          isPopular: pkg.packageType === "MONTHLY", // You can customize this logic
+          isPopular: pkg.packageType === "MONTHLY",
         }));
         set({ availablePlans: plans });
       }
