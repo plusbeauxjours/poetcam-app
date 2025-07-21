@@ -4,6 +4,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useEffect } from "react";
 
 export default function PlansScreen() {
   const {
@@ -49,9 +49,7 @@ export default function PlansScreen() {
         onRefresh={() => refreshSubscriptionData()}
         contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => {
-          const pkg = offerings?.availablePackages.find(
-            (p) => p.identifier === item.id
-          );
+          const pkg = offerings?.availablePackages.find((p) => p.identifier === item.id);
           const handlePurchase = async () => {
             if (!pkg) return;
             const success = await purchasePackage(pkg);
@@ -68,8 +66,7 @@ export default function PlansScreen() {
                   borderColor: colors.border,
                   width: Math.min(width - 32, 420),
                 },
-              ]}
-            >
+              ]}>
               <ThemedText type="subtitle" style={styles.cardTitle}>
                 {item.title}
               </ThemedText>
@@ -91,8 +88,7 @@ export default function PlansScreen() {
                 style={[styles.subscribeButton, { backgroundColor: colors.tint }]}
                 onPress={handlePurchase}
                 disabled={isLoading}
-                activeOpacity={0.8}
-              >
+                activeOpacity={0.8}>
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
