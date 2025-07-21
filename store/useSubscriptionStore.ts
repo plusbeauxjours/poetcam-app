@@ -1,4 +1,5 @@
 import RevenueCatService from "@/services/revenueCatService";
+import SubscriptionService from "@/services/subscriptionService";
 import { SubscriptionFeatures, SubscriptionPlan, SubscriptionStatus } from "@/types/subscription";
 import { CustomerInfo, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 import { create } from "zustand";
@@ -27,6 +28,7 @@ interface SubscriptionStore {
   refreshSubscriptionData: () => Promise<void>;
   purchasePackage: (packageToPurchase: PurchasesPackage) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
+  checkSubscriptionStatus: () => Promise<void>;
   getSubscriptionFeatures: () => SubscriptionFeatures;
   hasFeature: (feature: keyof SubscriptionFeatures) => boolean;
   reset: () => void;
@@ -164,6 +166,26 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       const errorMessage = error instanceof Error ? error.message : "Failed to restore purchases";
       set({ error: errorMessage });
       return false;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Check subscription status from backend and schedule renewal notification
+  checkSubscriptionStatus: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const status = await SubscriptionService.getStatus();
+      set({ subscriptionStatus: status });
+
+      if (status.expirationDate) {
+        await SubscriptionService.scheduleRenewalNotification(status.expirationDate);
+      } else {
+        await SubscriptionService.cancelRenewalNotification();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to check subscription";
+      set({ error: message });
     } finally {
       set({ isLoading: false });
     }
