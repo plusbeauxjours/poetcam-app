@@ -1,6 +1,6 @@
 import { REVENUECAT_API_KEY_ANDROID, REVENUECAT_API_KEY_IOS } from "@env";
-import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
@@ -11,6 +11,8 @@ import Purchases, {
 
 const OFFERINGS_CACHE_KEY = "@offerings_cache";
 const OFFERINGS_CACHE_TTL = 3600; // 1 hour
+const SUBSCRIPTION_STATUS_CACHE_KEY = "@subscription_status_cache";
+const SUBSCRIPTION_STATUS_CACHE_TTL = 3600; // 1 hour
 
 export class RevenueCatService {
   private static instance: RevenueCatService;
@@ -27,7 +29,7 @@ export class RevenueCatService {
       }
       return cached.data;
     } catch (error) {
-      console.warn('Failed to load offerings cache', error);
+      console.warn("Failed to load offerings cache", error);
       return null;
     }
   }
@@ -37,7 +39,32 @@ export class RevenueCatService {
       const data = { timestamp: Date.now(), data: offerings };
       await AsyncStorage.setItem(OFFERINGS_CACHE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.warn('Failed to save offerings cache', error);
+      console.warn("Failed to save offerings cache", error);
+    }
+  }
+
+  private async loadCachedSubscriptionStatus(): Promise<any | null> {
+    try {
+      const raw = await AsyncStorage.getItem(SUBSCRIPTION_STATUS_CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw) as { timestamp: number; data: any };
+      if (Date.now() - cached.timestamp > SUBSCRIPTION_STATUS_CACHE_TTL * 1000) {
+        await AsyncStorage.removeItem(SUBSCRIPTION_STATUS_CACHE_KEY);
+        return null;
+      }
+      return cached.data;
+    } catch (error) {
+      console.warn("Failed to load subscription status cache", error);
+      return null;
+    }
+  }
+
+  private async saveCachedSubscriptionStatus(status: any): Promise<void> {
+    try {
+      const data = { timestamp: Date.now(), data: status };
+      await AsyncStorage.setItem(SUBSCRIPTION_STATUS_CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn("Failed to save subscription status cache", error);
     }
   }
 
@@ -215,9 +242,13 @@ export class RevenueCatService {
     expirationDate?: string;
     productIdentifier?: string;
   }> {
+    // 캐시 우선 반환
+    let cachedStatus = await this.loadCachedSubscriptionStatus();
+    let networkError = false;
     try {
       const customerInfo = await this.getCustomerInfo();
       if (!customerInfo) {
+        if (cachedStatus) return cachedStatus;
         return { isActive: false };
       }
 
@@ -225,16 +256,22 @@ export class RevenueCatService {
 
       if (activeEntitlements.length > 0) {
         const entitlement = activeEntitlements[0];
-        return {
+        const status = {
           isActive: true,
           expirationDate: entitlement.expirationDate || undefined,
           productIdentifier: entitlement.productIdentifier,
         };
+        await this.saveCachedSubscriptionStatus(status);
+        return status;
       }
-
-      return { isActive: false };
+      const status = { isActive: false };
+      await this.saveCachedSubscriptionStatus(status);
+      return status;
     } catch (error) {
       console.error("Failed to get subscription status:", error);
+      networkError = true;
+      // 네트워크 오류 시 캐시 반환
+      if (cachedStatus) return cachedStatus;
       return { isActive: false };
     }
   }

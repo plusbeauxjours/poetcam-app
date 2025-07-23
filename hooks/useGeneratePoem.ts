@@ -5,7 +5,9 @@ import {
   getRequestMetrics,
   PoemGenerationResult,
 } from "@/services/claudeApi";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { ImageProcessingOptions, processImageForAPI } from "@/utils/image";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation } from "@tanstack/react-query";
 
 interface GeneratePoemRequest {
@@ -25,6 +27,26 @@ interface EnhancedPoemResult extends PoemGenerationResult {
   };
 }
 
+const POEM_GEN_LIMIT = 3;
+const POEM_GEN_COUNT_KEY = "@poem_gen_count";
+
+async function getTodayKey() {
+  const today = new Date();
+  return `${POEM_GEN_COUNT_KEY}_${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+}
+
+async function getPoemGenCount() {
+  const key = await getTodayKey();
+  const count = await AsyncStorage.getItem(key);
+  return count ? parseInt(count, 10) : 0;
+}
+
+async function incrementPoemGenCount() {
+  const key = await getTodayKey();
+  const count = await getPoemGenCount();
+  await AsyncStorage.setItem(key, (count + 1).toString());
+}
+
 /**
  * Generate poem from image using Claude API with optimized image preprocessing
  */
@@ -33,6 +55,16 @@ async function generatePoem({
   poemOptions = {},
   imageOptions = {},
 }: GeneratePoemRequest): Promise<EnhancedPoemResult> {
+  // 구독자 여부 확인
+  const isUnlimited = useSubscriptionStore.getState().hasFeature("unlimitedPoems");
+  if (!isUnlimited) {
+    const count = await getPoemGenCount();
+    if (count >= POEM_GEN_LIMIT) {
+      throw new Error(
+        "비구독자는 하루 3회까지만 시를 생성할 수 있습니다. 구독 시 무제한 이용이 가능합니다."
+      );
+    }
+  }
   try {
     // Set default style if not provided
     const finalPoemOptions: GeneratePoemOptions = {
@@ -68,6 +100,11 @@ async function generatePoem({
         poemLength: result.poem.length,
         parameters: result.metadata.parameters,
       });
+    }
+
+    // 성공 시 카운트 증가 (비구독자만)
+    if (!isUnlimited) {
+      await incrementPoemGenCount();
     }
 
     return {
