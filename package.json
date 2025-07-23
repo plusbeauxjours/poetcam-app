@@ -9,7 +9,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:subscription": "ts-node ./tests/subscription.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",

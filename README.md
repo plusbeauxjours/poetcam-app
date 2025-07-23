@@ -48,4 +48,13 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Subscription Tests
+
+Subscription 기능을 검증하려면 의존성을 설치한 후 아래 명령어를 실행합니다.
+
+```bash
+yarn test:subscription
+```
+
+`tests/subscription.test.ts`에서 RevenueCat과 구독 상태를 확인하는 예제 테스트를 제공합니다.
 # poetcam-app
