@@ -33,12 +33,12 @@ import {
   Image,
   Platform,
   ScrollView,
-  Share,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   Vibration,
 } from "react-native";
+import { shareToSocial } from "@/services/socialShareService";
 import Animated, {
   Easing,
   interpolate,
@@ -200,19 +200,17 @@ export default function ResultScreen() {
   };
 
   const handleShare = async () => {
-    if (generatePoemMutation.data?.poem) {
+    if (params.imageUri && generatePoemMutation.data?.poem) {
       try {
-        const poemText = generatePoemMutation.data.poem;
-        const shareMessage = `${poemText}\n\n📸 PoetCam으로 생성된 시`;
+        const shared = await shareToSocial(
+          params.imageUri,
+          generatePoemMutation.data.poem
+        );
 
-        if (Platform.OS === "ios" || Platform.OS === "android") {
-          await Share.share({
-            message: shareMessage,
-            title: "아름다운 시를 공유해요",
-          });
+        if (!shared) {
+          Alert.alert("공유 실패", "공유 중 문제가 발생했습니다. 다시 시도해주세요.");
         }
 
-        // Haptic feedback
         if (Platform.OS === "ios") {
           Vibration.vibrate([10]);
         }
