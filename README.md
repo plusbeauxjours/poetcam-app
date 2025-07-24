@@ -1,23 +1,23 @@
-# Welcome to your Expo app 👋
+# PoetCam App
+
+## English
+
+Welcome to your Expo app.
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+### Get started
 
 1. Install dependencies
-
    ```bash
    npm install
    ```
-
 2. Start the app
-
    ```bash
    npx expo start
    ```
 
 In the output, you'll find options to open the app in a
-
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
@@ -25,7 +25,7 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+### Get a fresh project
 
 When you're ready, run:
 
@@ -35,26 +35,83 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-## Learn more
+### Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
+- [Expo documentation](https://docs.expo.dev/)
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
+### Join the community
 
 Join our community of developers creating universal apps.
+- [Expo on GitHub](https://github.com/expo/expo)
+- [Discord community](https://chat.expo.dev)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# Subscription Tests
+### Subscription Tests
 
-Subscription 기능을 검증하려면 의존성을 설치한 후 아래 명령어를 실행합니다.
+To verify subscription functionality after installing dependencies, run:
 
 ```bash
 yarn test:subscription
 ```
 
-`tests/subscription.test.ts`에서 RevenueCat과 구독 상태를 확인하는 예제 테스트를 제공합니다.
-# poetcam-app
+`tests/subscription.test.ts` provides example tests that check RevenueCat and subscription state.
+
+---
+
+## 한국어
+
+PoetCam 앱에 오신 것을 환영합니다.
+
+이 프로젝트는 [`create-expo-app`](https://www.npmjs.com/package/create-expo-app)으로 생성된 [Expo](https://expo.dev) 프로젝트입니다.
+
+### 시작하기
+
+1. 의존성 설치
+   ```bash
+   npm install
+   ```
+2. 앱 실행
+   ```bash
+   npx expo start
+   ```
+
+출력에서 다음과 같은 옵션을 통해 앱을 열 수 있습니다.
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android 에뮬레이터](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS 시뮬레이터](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go)
+
+`app` 디렉터리의 파일을 수정하여 개발을 시작할 수 있습니다. 이 프로젝트는 [파일 기반 라우팅](https://docs.expo.dev/router/introduction)을 사용합니다.
+
+### 빈 프로젝트로 초기화
+
+준비가 되면 다음 명령어를 실행합니다.
+
+```bash
+npm run reset-project
+```
+
+이 명령어는 기본 코드를 **app-example** 디렉터리로 이동시키고 빈 **app** 디렉터리를 생성합니다.
+
+### 더 알아보기
+
+Expo로 프로젝트를 개발하는 방법은 다음 자료들을 참고하세요.
+- [Expo 문서](https://docs.expo.dev/)
+- [Expo 튜토리얼](https://docs.expo.dev/tutorial/introduction/)
+
+### 커뮤니티 참여
+
+범용 앱을 개발하는 개발자 커뮤니티에 참여하세요.
+- [GitHub의 Expo](https://github.com/expo/expo)
+- [Discord 커뮤니티](https://chat.expo.dev)
+
+### 구독 테스트
+
+의존성 설치 후 아래 명령어를 실행하여 Subscription 기능을 검증합니다.
+
+```bash
+yarn test:subscription
+```
+
+`tests/subscription.test.ts` 파일에서 RevenueCat과 구독 상태를 확인하는 예제 테스트를 제공합니다.
