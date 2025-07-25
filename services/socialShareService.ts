@@ -5,6 +5,7 @@ import { ShareDialog } from 'react-native-fbsdk-next';
 import { KakaoShareParams, shareWithKakaoTalk } from '@react-native-kakao/share';
 import { supabase } from "../supabase";
 import { Platform, Alert } from 'react-native';
+import { addPoemTextOverlay, imageOverlayEngine } from './imageOverlayEngine';
 
 export interface OverlayOptions {
   fontName?: string;
@@ -50,19 +51,73 @@ export async function addTextOverlay(
   options: OverlayOptions = {}
 ): Promise<string> {
   try {
-    // Resize image for consistent output
+    // Use the new image overlay engine for better text rendering
+    const overlayOptions = {
+      position: options.position ? {
+        x: options.position.x / 100 || 0.5, // Convert from percentage if needed
+        y: options.position.y / 100 || 0.9,
+        alignment: 'center' as const,
+        verticalAlignment: 'bottom' as const
+      } : undefined,
+      style: {
+        fontFamily: options.fontName,
+        fontSize: options.fontSize || 20,
+        color: options.color || '#FFFFFF',
+        textAlign: 'center' as const
+      },
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        blur: 4,
+        color: 'rgba(0, 0, 0, 0.7)'
+      },
+      background: {
+        color: 'rgba(0, 0, 0, 0.3)',
+        padding: 8,
+        borderRadius: 6,
+        opacity: 0.8
+      }
+    };
+
+    const result = await addPoemTextOverlay(imageUri, text, {
+      position: 'bottomCenter',
+      fontSize: options.fontSize || 18,
+      color: options.color || '#FFFFFF',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      withShadow: true
+    });
+
+    if (result.success && result.uri) {
+      return result.uri;
+    } else {
+      console.warn('Text overlay failed, using fallback:', result.error);
+      return await fallbackTextOverlay(imageUri, text, options);
+    }
+  } catch (error) {
+    console.error("Failed to add text overlay:", error);
+    return await fallbackTextOverlay(imageUri, text, options);
+  }
+}
+
+/**
+ * Fallback text overlay using basic image manipulation
+ */
+async function fallbackTextOverlay(
+  imageUri: string,
+  text: string,
+  options: OverlayOptions = {}
+): Promise<string> {
+  try {
+    // Basic image resizing as fallback
     const manipulated = await ImageManipulator.manipulateAsync(
       imageUri,
       [{ resize: { width: 1000 } }],
-      { format: ImageManipulator.SaveFormat.JPEG }
+      { format: ImageManipulator.SaveFormat.JPEG, compress: 0.8 }
     );
 
-    // Placeholder: Text overlay would require a canvas or native module.
-    // In production, draw the text onto the image using a library like
-    // react-native-canvas or a custom native module.
     return manipulated.uri;
   } catch (error) {
-    console.error("Failed to add text overlay:", error);
+    console.error("Fallback text overlay failed:", error);
     return imageUri;
   }
 }
@@ -268,7 +323,11 @@ export async function shareGeneral(content: ShareContentData): Promise<ShareResu
       throw new Error('Image URI and poem text are required for sharing');
     }
 
-    const overlayUri = await addTextOverlay(content.imageUri, content.poemText);
+    const overlayUri = await addTextOverlay(content.imageUri, content.poemText, {
+      fontSize: 18,
+      color: '#FFFFFF',
+      position: { x: 50, y: 85 } // Bottom center position as percentage
+    });
     
     const shareOptions: ShareOptions = {
       title: content.title || '포엠캠에서 생성된 시',
@@ -289,7 +348,11 @@ export async function shareGeneral(content: ShareContentData): Promise<ShareResu
       const available = await Sharing.isAvailableAsync();
       
       if (available) {
-        const overlayUri = await addTextOverlay(content.imageUri, content.poemText);
+        const overlayUri = await addTextOverlay(content.imageUri, content.poemText, {
+      fontSize: 18,
+      color: '#FFFFFF',
+      position: { x: 50, y: 85 } // Bottom center position as percentage
+    });
         await Sharing.shareAsync(overlayUri, {
           mimeType: "image/jpeg",
           dialogTitle: "포엠캠에서 생성된 시 공유하기",
@@ -557,6 +620,114 @@ export function generateShareLink(poemId: string): string {
   return `https://poetcam.app/poem/${poemId}`;
 }
 
+/**
+ * Enhanced text overlay specifically optimized for poem sharing
+ */
+export async function addPoemOverlay(
+  imageUri: string,
+  poemText: string,
+  options: {
+    position?: 'top' | 'middle' | 'bottom';
+    fontSize?: number;
+    color?: string;
+    backgroundColor?: string;
+    style?: 'elegant' | 'modern' | 'minimal';
+  } = {}
+): Promise<string> {
+  try {
+    const position = options.position || 'bottom';
+    const style = options.style || 'elegant';
+    
+    let overlayPosition: 'topCenter' | 'middleCenter' | 'bottomCenter';
+    switch (position) {
+      case 'top':
+        overlayPosition = 'topCenter';
+        break;
+      case 'middle':
+        overlayPosition = 'middleCenter';
+        break;
+      default:
+        overlayPosition = 'bottomCenter';
+    }
+    
+    const styleConfigs = {
+      elegant: {
+        fontSize: options.fontSize || 18,
+        color: options.color || '#FFFFFF',
+        backgroundColor: options.backgroundColor || 'rgba(0, 0, 0, 0.6)',
+        withShadow: true,
+      },
+      modern: {
+        fontSize: options.fontSize || 20,
+        color: options.color || '#000000',
+        backgroundColor: options.backgroundColor || 'rgba(255, 255, 255, 0.9)',
+        withShadow: false,
+      },
+      minimal: {
+        fontSize: options.fontSize || 16,
+        color: options.color || '#FFFFFF',
+        withShadow: true,
+      }
+    };
+    
+    const config = styleConfigs[style];
+    
+    const result = await addPoemTextOverlay(imageUri, poemText, {
+      position: overlayPosition,
+      ...config
+    });
+    
+    if (result.success && result.uri) {
+      return result.uri;
+    } else {
+      console.warn('Enhanced poem overlay failed, using basic overlay:', result.error);
+      return await addTextOverlay(imageUri, poemText, {
+        fontSize: config.fontSize,
+        color: config.color
+      });
+    }
+  } catch (error) {
+    console.error('Poem overlay creation failed:', error);
+    return await addTextOverlay(imageUri, poemText, options);
+  }
+}
+
+/**
+ * Get overlay engine statistics for monitoring
+ */
+export function getOverlayEngineStats(): {
+  cacheSize: number;
+  maxCacheSize: number;
+  engineStatus: 'active' | 'error';
+} {
+  try {
+    const stats = imageOverlayEngine.getCacheStats();
+    return {
+      cacheSize: stats.size,
+      maxCacheSize: stats.maxSize,
+      engineStatus: 'active'
+    };
+  } catch (error) {
+    console.error('Failed to get overlay engine stats:', error);
+    return {
+      cacheSize: 0,
+      maxCacheSize: 0,
+      engineStatus: 'error'
+    };
+  }
+}
+
+/**
+ * Clear overlay engine cache to free memory
+ */
+export function clearOverlayCache(): void {
+  try {
+    imageOverlayEngine.clearCache();
+  } catch (error) {
+    console.error('Failed to clear overlay cache:', error);
+  }
+}
+
 // Export all functions for easy import
 export {
   // Main sharing functions
@@ -572,6 +743,7 @@ export {
   
   // Utility functions
   addTextOverlay,
+  addPoemOverlay,
   updateSharedStatus,
   checkPlatformAvailability,
   showShareDialog,
@@ -579,6 +751,8 @@ export {
   safeUpdateSharedStatus,
   logSharingAnalytics,
   generateShareLink,
+  getOverlayEngineStats,
+  clearOverlayCache,
   
   // Constants and types
   SOCIAL_PLATFORMS,
@@ -593,7 +767,10 @@ export default {
   shareToKakaoTalk,
   shareGeneral,
   addTextOverlay,
+  addPoemOverlay,
   updateSharedStatus,
   generateShareLink,
+  getOverlayEngineStats,
+  clearOverlayCache,
   SOCIAL_PLATFORMS,
 };
