@@ -32,6 +32,9 @@ import {
 import * as MediaLibrary from 'expo-media-library';
 import ViewShot from 'react-native-view-shot';
 import { shareToSocial } from '@/services/socialShareService';
+import { shareWithTracking } from '@/services/enhancedSocialShareService';
+import { ShareNotification } from './ShareNotification';
+import { ShareStatus } from '@/types/shareTypes';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -73,6 +76,17 @@ export function ImagePreviewEnhanced({
   const [isEditing, setIsEditing] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+  const [shareNotification, setShareNotification] = useState<{
+    visible: boolean;
+    status: ShareStatus;
+    message: string;
+    canRetry: boolean;
+  }>({
+    visible: false,
+    status: 'pending',
+    message: '',
+    canRetry: false,
+  });
 
   // Animation values for image transform
   const scale = useSharedValue(1);
@@ -193,14 +207,45 @@ export function ImagePreviewEnhanced({
     if (!uri) return;
 
     try {
-      const shared = await shareToSocial(uri, editableText);
-      if (!shared) {
-        Alert.alert('공유 실패', '공유 중 문제가 발생했습니다.');
+      const result = await shareWithTracking(
+        {
+          imageUri: uri,
+          poemText: editableText,
+        },
+        'other',
+        undefined,
+        (status, message) => {
+          setShareNotification({
+            visible: true,
+            status,
+            message,
+            canRetry: status === 'failed',
+          });
+        }
+      );
+
+      if (!result.success && !shareNotification.visible) {
+        setShareNotification({
+          visible: true,
+          status: 'failed',
+          message: result.error || '공유 중 문제가 발생했습니다.',
+          canRetry: true,
+        });
       }
     } catch (error) {
       console.error('Failed to share:', error);
-      Alert.alert('공유 실패', '공유 중 문제가 발생했습니다.');
+      setShareNotification({
+        visible: true,
+        status: 'failed',
+        message: '공유 중 문제가 발생했습니다.',
+        canRetry: true,
+      });
     }
+  };
+
+  const handleRetryShare = () => {
+    setShareNotification({ ...shareNotification, visible: false });
+    setTimeout(() => handleShare(), 300);
   };
 
   const dynamicStyles = StyleSheet.create({
@@ -449,6 +494,16 @@ export function ImagePreviewEnhanced({
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
+
+          {/* Share Notification */}
+          <ShareNotification
+            visible={shareNotification.visible}
+            status={shareNotification.status}
+            message={shareNotification.message}
+            onClose={() => setShareNotification({ ...shareNotification, visible: false })}
+            onRetry={shareNotification.canRetry ? handleRetryShare : undefined}
+            autoHideDuration={shareNotification.status === 'success' ? 2000 : 5000}
+          />
         </SafeAreaView>
       </GestureHandlerRootView>
     </Modal>
