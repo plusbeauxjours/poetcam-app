@@ -4,6 +4,10 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useGeneratePoem } from "@/hooks/useGeneratePoem";
+import { useTextStyle } from "@/hooks/useTextStyle";
+import { StyleSelector } from "@/components/StyleSelector";
+import { ImagePreviewEnhanced } from "@/components/ImagePreviewEnhanced";
+import { AVAILABLE_FONTS } from "@/constants/fonts";
 import {
   convertToProgressUpdate,
   convertToUserFriendlyError,
@@ -24,6 +28,7 @@ import {
   RefreshCw,
   Share2,
   Sparkles,
+  Palette,
 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -62,6 +67,7 @@ export default function ResultScreen() {
   const router = useRouter();
   const { location } = useCurrentLocation();
   const { addPoet } = usePoetHistoryStore();
+  const { textStyle, saveTextStyle } = useTextStyle();
 
   const generatePoemMutation = useGeneratePoem();
   const [displayedText, setDisplayedText] = useState("");
@@ -76,6 +82,8 @@ export default function ResultScreen() {
   });
   const [savedToHistory, setSavedToHistory] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
+  const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const typewriterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animation values
@@ -199,25 +207,9 @@ export default function ResultScreen() {
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (params.imageUri && generatePoemMutation.data?.poem) {
-      try {
-        const shared = await shareToSocial(
-          params.imageUri,
-          generatePoemMutation.data.poem
-        );
-
-        if (!shared) {
-          Alert.alert("공유 실패", "공유 중 문제가 발생했습니다. 다시 시도해주세요.");
-        }
-
-        if (Platform.OS === "ios") {
-          Vibration.vibrate([10]);
-        }
-      } catch (error) {
-        console.error("Failed to share:", error);
-        Alert.alert("공유 실패", "공유 중 문제가 발생했습니다. 다시 시도해주세요.");
-      }
+      setShowImagePreview(true);
     }
   };
 
@@ -358,11 +350,13 @@ export default function ResultScreen() {
       }),
     },
     poemText: {
-      fontSize: isTablet ? 20 : 18,
-      lineHeight: isTablet ? 32 : 28,
-      color: colors.text,
-      fontStyle: "italic",
-      textAlign: "center",
+      fontFamily: AVAILABLE_FONTS.find((f) => f.id === textStyle.fontId)?.fontFamily || 'System',
+      fontSize: textStyle.fontSize,
+      lineHeight: textStyle.fontSize * textStyle.lineHeight,
+      letterSpacing: textStyle.letterSpacing,
+      color: textStyle.color,
+      fontWeight: textStyle.fontWeight,
+      textAlign: textStyle.textAlign,
     },
     primaryButton: {
       backgroundColor: colors.primary,
@@ -549,9 +543,21 @@ export default function ResultScreen() {
         {/* Poem Display */}
         {displayedText && (
           <Animated.View style={[styles.poemContainer, animatedPoemStyle]}>
-            <ThemedView style={dynamicStyles.poemCard}>
+            <ThemedView style={[dynamicStyles.poemCard, { position: 'relative', overflow: 'hidden' }]}>
+              {/* Background overlay for text */}
+              <View 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: textStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+                  opacity: textStyle.opacity,
+                }}
+              />
               <ThemedText
-                style={dynamicStyles.poemText}
+                style={[dynamicStyles.poemText, { position: 'relative', zIndex: 1 }]}
                 accessibilityLabel="생성된 시"
                 accessibilityHint="AI가 이미지를 보고 만든 시입니다">
                 {displayedText}
@@ -561,8 +567,10 @@ export default function ResultScreen() {
                   style={[
                     styles.cursor,
                     {
-                      color: colors.text,
+                      color: textStyle.color,
                       opacity: withRepeat(withTiming(0, { duration: 500 }), -1, true),
+                      position: 'relative',
+                      zIndex: 1,
                     },
                   ]}>
                   |
@@ -591,6 +599,17 @@ export default function ResultScreen() {
         {/* Action Buttons */}
         {generatePoemMutation.data?.poem && !isAnimating && (
           <Animated.View style={[styles.actionsContainer, animatedActionButtonsStyle]}>
+            <TouchableOpacity
+              onPress={() => setShowStyleSelector(true)}
+              style={[styles.actionButton, dynamicStyles.secondaryButton]}
+              accessibilityLabel="스타일 변경"
+              accessibilityHint="폰트와 색상을 변경합니다">
+              <Palette color={colors.icon} size={20} />
+              <ThemedText style={[styles.secondaryButtonText, { color: colors.text }]}>
+                스타일
+              </ThemedText>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleCopy}
               style={[styles.actionButton, dynamicStyles.secondaryButton]}
@@ -662,6 +681,26 @@ export default function ResultScreen() {
         <CheckCircle color={colors.success} size={64} />
         <ThemedText style={[styles.successText, { color: colors.success }]}>저장완료!</ThemedText>
       </Animated.View>
+
+      {/* Style Selector Modal */}
+      <StyleSelector
+        visible={showStyleSelector}
+        onClose={() => setShowStyleSelector(false)}
+        currentStyle={textStyle}
+        onStyleChange={saveTextStyle}
+        previewText={displayedText || '봄바람에 흩날리는\n벚꽃잎처럼\n우리의 마음도\n설레이네'}
+      />
+
+      {/* Image Preview Modal */}
+      {params.imageUri && generatePoemMutation.data?.poem && (
+        <ImagePreviewEnhanced
+          visible={showImagePreview}
+          onClose={() => setShowImagePreview(false)}
+          imageUri={params.imageUri}
+          poemText={generatePoemMutation.data.poem}
+          textStyle={textStyle}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -793,19 +832,22 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 8,
     paddingHorizontal: 20,
     marginBottom: 16,
   },
   actionButton: {
     flex: 1,
+    minWidth: "48%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    gap: 8,
-    minHeight: 52,
+    gap: 6,
+    minHeight: 48,
   },
   primaryButtonText: {
     fontSize: 16,
