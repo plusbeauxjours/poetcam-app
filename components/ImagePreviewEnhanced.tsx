@@ -28,11 +28,14 @@ import {
   ZoomOut,
   RefreshCw,
   Maximize2,
+  Link,
 } from 'lucide-react-native';
 import * as MediaLibrary from 'expo-media-library';
+import * as Clipboard from 'expo-clipboard';
 import ViewShot from 'react-native-view-shot';
 import { shareToSocial } from '@/services/socialShareService';
 import { shareWithTracking } from '@/services/enhancedSocialShareService';
+import { createShareableContent } from '@/services/shareLinkService';
 import { ShareNotification } from './ShareNotification';
 import { ShareStatus } from '@/types/shareTypes';
 import Animated, {
@@ -238,6 +241,48 @@ export function ImagePreviewEnhanced({
         visible: true,
         status: 'failed',
         message: '공유 중 문제가 발생했습니다.',
+        canRetry: true,
+      });
+    }
+  };
+
+  const handleCreateShareLink = async () => {
+    const uri = await captureImage();
+    if (!uri) return;
+
+    try {
+      setShareNotification({
+        visible: true,
+        status: 'pending',
+        message: '공유 링크를 생성하는 중...',
+        canRetry: false,
+      });
+
+      const result = await createShareableContent(
+        editableText,
+        uri,
+        {
+          expirationDays: 30,
+          platform: 'app',
+          source: 'image_preview',
+        }
+      );
+
+      // Copy link to clipboard
+      await Clipboard.setStringAsync(result.fullUrl);
+
+      setShareNotification({
+        visible: true,
+        status: 'success',
+        message: '공유 링크가 생성되어 클립보드에 복사되었습니다.',
+        canRetry: false,
+      });
+    } catch (error) {
+      console.error('Failed to create share link:', error);
+      setShareNotification({
+        visible: true,
+        status: 'failed',
+        message: '공유 링크 생성 중 문제가 발생했습니다.',
         canRetry: true,
       });
     }
@@ -471,6 +516,14 @@ export function ImagePreviewEnhanced({
                 onPress={() => setShowGrid(!showGrid)}
               >
                 <Maximize2 color={showGrid ? '#FFF' : colors.icon} size={20} />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={dynamicStyles.toolButton} 
+                onPress={handleCreateShareLink}
+                disabled={isCapturing}
+              >
+                <Link color={colors.icon} size={20} />
               </TouchableOpacity>
             </View>
 

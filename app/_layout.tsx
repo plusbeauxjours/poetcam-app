@@ -11,6 +11,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePoetReminder } from "@/hooks/usePoetReminder";
+import { useSharedContentLink } from "@/hooks/useDeepLinking";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSubscriptionStore } from "../store/useSubscriptionStore";
 
@@ -21,6 +22,7 @@ export default function RootLayout() {
   const { initializeRevenueCat } = useSubscriptionStore();
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const { shortCode, isReady: deepLinkReady, clearSharedContent } = useSharedContentLink();
   usePoetReminder();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -45,9 +47,19 @@ export default function RootLayout() {
     }
   }, [isInitialized, initializeRevenueCat]);
 
+  // Handle deep linking to shared content
+  useEffect(() => {
+    if (loaded && isInitialized && !isLoading && deepLinkReady && shortCode && session) {
+      SplashScreen.hideAsync().then(() => {
+        router.push(`/shared/${shortCode}`);
+        clearSharedContent();
+      });
+    }
+  }, [loaded, isInitialized, isLoading, deepLinkReady, shortCode, session, router, clearSharedContent]);
+
   // Handle navigation when auth state and fonts are ready
   useEffect(() => {
-    if (loaded && isInitialized && !isLoading) {
+    if (loaded && isInitialized && !isLoading && (!deepLinkReady || !shortCode)) {
       SplashScreen.hideAsync().then(() => {
         if (!session) {
           router.replace("/login");
@@ -56,7 +68,7 @@ export default function RootLayout() {
         }
       });
     }
-  }, [loaded, isInitialized, isLoading, session, router]);
+  }, [loaded, isInitialized, isLoading, deepLinkReady, shortCode, session, router]);
 
   // Show splash screen while loading
   if (!isInitialized || !loaded || isLoading) return null;
@@ -72,6 +84,7 @@ export default function RootLayout() {
             <Stack.Screen name="camera" options={{ presentation: "modal", headerShown: false }} />
             <Stack.Screen name="result" options={{ presentation: "modal" }} />
             <Stack.Screen name="settings" options={{ headerShown: true, title: "설정" }} />
+            <Stack.Screen name="shared/[shortCode]" options={{ presentation: "modal", headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
         </ThemeProvider>
