@@ -1,4 +1,4 @@
-import { ChallengeService } from '@/services/challengeService';
+import { ChallengeService } from '../services/challengeService';
 import {
   Challenge,
   ChallengeType,
@@ -6,7 +6,7 @@ import {
   ChallengeStatus,
   RewardType,
   UserChallengeStatus
-} from '@/types/challenge';
+} from '../types/challenge';
 
 // 샘플 챌린지 데이터
 const sampleChallenges: Partial<Challenge>[] = [

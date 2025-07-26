@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase';
+import { supabase } from '../config/supabase';
 import {
   Challenge,
   ChallengeFilterOptions,
@@ -7,7 +7,7 @@ import {
   UserChallenge,
   UserChallengeStatus,
   ChallengeStats
-} from '@/types/challenge';
+} from '../types/challenge';
 
 export class ChallengeService {
   // 챌린지 목록 조회
