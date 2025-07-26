@@ -387,29 +387,189 @@ export class BadgeService {
     condition: BadgeCondition
   ): Promise<number> {
     try {
+      const now = new Date();
+      let timeFilter = '';
+      
+      // 기간 제한 조건 처리
+      if (condition.period) {
+        switch (condition.period) {
+          case 'daily':
+            timeFilter = `AND created_at >= '${new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()}'`;
+            break;
+          case 'weekly':
+            timeFilter = `AND created_at >= '${new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()}'`;
+            break;
+          case 'monthly':
+            timeFilter = `AND created_at >= '${new Date(now.getFullYear(), now.getMonth(), 1).toISOString()}'`;
+            break;
+          default:
+            timeFilter = ''; // all_time
+        }
+      }
+
       switch (condition.type) {
         case BadgeConditionType.POEM_COUNT:
-          // 시 작성 개수 조회 (실제 구현 시 poems 테이블 참조)
-          return 0; // TODO: 구현 필요
+          // 시 작성 개수 조회
+          const { data: poems, error: poemsError } = await supabase
+            .from('poems')
+            .select('id')
+            .eq('user_id', userId);
+          
+          if (poemsError) throw poemsError;
+          return poems?.length || 0;
 
         case BadgeConditionType.PHOTO_COUNT:
-          // 사진 촬영 개수 조회 (실제 구현 시 photos 테이블 참조)
-          return 0; // TODO: 구현 필요
+          // 사진 촬영 개수 조회 
+          const { data: photos, error: photosError } = await supabase
+            .from('photos')
+            .select('id')
+            .eq('user_id', userId);
+          
+          if (photosError) throw photosError;
+          return photos?.length || 0;
 
         case BadgeConditionType.CHALLENGE_COMPLETE:
           // 챌린지 완료 개수 조회
-          const { data: completedChallenges } = await supabase
+          let challengeQuery = supabase
             .from('user_challenges')
             .select('id')
             .eq('user_id', userId)
             .eq('status', 'completed');
+
+          // 특정 챌린지 조건이 있는 경우
+          if (condition.specificValue) {
+            challengeQuery = challengeQuery.eq('challenge_id', condition.specificValue);
+          }
+
+          const { data: completedChallenges, error: challengesError } = await challengeQuery;
+          if (challengesError) throw challengesError;
           return completedChallenges?.length || 0;
 
+        case BadgeConditionType.LOCATION_VISIT:
+          // 위치 방문 개수 조회
+          const { data: locations, error: locationsError } = await supabase
+            .from('user_locations')
+            .select('location_id')
+            .eq('user_id', userId);
+          
+          if (locationsError) throw locationsError;
+          // 고유한 위치 개수 계산
+          const uniqueLocations = new Set(locations?.map(l => l.location_id) || []);
+          return uniqueLocations.size;
+
+        case BadgeConditionType.CONSECUTIVE_DAYS:
+          // 연속 접속 일수 조회 (user_stats에서)
+          const { data: userStats, error: statsError } = await supabase
+            .from('user_stats')
+            .select('current_streak')
+            .eq('user_id', userId)
+            .single();
+          
+          if (statsError) throw statsError;
+          return userStats?.current_streak || 0;
+
         case BadgeConditionType.TOTAL_POINTS:
-          // 총 포인트 조회 (실제 구현 시 user_stats 테이블 참조)
-          return 0; // TODO: 구현 필요
+          // 총 포인트 조회
+          const { data: pointStats, error: pointsError } = await supabase
+            .from('user_stats')
+            .select('total_points, lifetime_points')
+            .eq('user_id', userId)
+            .single();
+          
+          if (pointsError) throw pointsError;
+          
+          // 기간에 따라 다른 포인트 필드 사용
+          if (condition.period === 'all_time') {
+            return pointStats?.lifetime_points || 0;
+          } else {
+            return pointStats?.total_points || 0;
+          }
+
+        case BadgeConditionType.SHARE_COUNT:
+          // 공유 횟수 조회
+          const { data: shares, error: sharesError } = await supabase
+            .from('social_shares')
+            .select('id')
+            .eq('user_id', userId);
+          
+          if (sharesError) throw sharesError;
+          return shares?.length || 0;
+
+        case BadgeConditionType.LIKE_RECEIVED:
+          // 받은 좋아요 수 조회 (user_stats에서)
+          const { data: likeStats, error: likesError } = await supabase
+            .from('user_stats')
+            .select('likes_received')
+            .eq('user_id', userId)
+            .single();
+          
+          if (likesError) throw likesError;
+          return likeStats?.likes_received || 0;
+
+        case BadgeConditionType.COMMENT_COUNT:
+          // 댓글 작성 수 조회
+          const { data: comments, error: commentsError } = await supabase
+            .from('comments')
+            .select('id')
+            .eq('user_id', userId);
+          
+          if (commentsError) throw commentsError;
+          return comments?.length || 0;
+
+        case BadgeConditionType.SPECIFIC_CHALLENGE:
+          // 특정 챌린지 완료 확인 (0 또는 1)
+          if (!condition.specificValue) return 0;
+          
+          const { data: specificChallenge, error: specificError } = await supabase
+            .from('user_challenges')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('challenge_id', condition.specificValue)
+            .eq('status', 'completed')
+            .limit(1);
+          
+          if (specificError) throw specificError;
+          return specificChallenge?.length || 0;
+
+        case BadgeConditionType.TIME_BASED:
+          // 시간 기반 조건 (현재 시간이 조건에 맞는지 확인)
+          if (!condition.timeConstraint) return 0;
+          
+          const currentTime = now.getHours() * 100 + now.getMinutes(); // HHMM 형식
+          const startTime = condition.timeConstraint.startTime ? 
+            parseInt(condition.timeConstraint.startTime.replace(':', '')) : 0;
+          const endTime = condition.timeConstraint.endTime ? 
+            parseInt(condition.timeConstraint.endTime.replace(':', '')) : 2359;
+          
+          if (currentTime >= startTime && currentTime <= endTime) {
+            // 해당 시간대에 활동이 있었는지 확인
+            const { data: timeBasedActivity, error: timeError } = await supabase
+              .from('user_activities')
+              .select('id')
+              .eq('user_id', userId)
+              .gte('created_at', new Date(now.setHours(Math.floor(startTime / 100), startTime % 100, 0, 0)).toISOString())
+              .lte('created_at', new Date(now.setHours(Math.floor(endTime / 100), endTime % 100, 59, 999)).toISOString());
+            
+            if (timeError) throw timeError;
+            return timeBasedActivity?.length || 0;
+          }
+          return 0;
+
+        case BadgeConditionType.SEASONAL_EVENT:
+          // 계절 이벤트 참여 확인
+          if (!condition.specificValue) return 0;
+          
+          const { data: eventParticipation, error: eventError } = await supabase
+            .from('event_participations')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('event_id', condition.specificValue);
+          
+          if (eventError) throw eventError;
+          return eventParticipation?.length || 0;
 
         default:
+          console.warn(`Unknown badge condition type: ${condition.type}`);
           return 0;
       }
     } catch (error) {
